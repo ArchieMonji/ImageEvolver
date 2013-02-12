@@ -17,10 +17,11 @@ public class ImageEvolver extends Thread{
 	private ImageEvolverFrame ui;
 	private ArrayList<ColoredPolygon> polygons = new ArrayList<ColoredPolygon>();
 	private int polyCount, vertCount, width, height;
-	private double lastEval = Double.MAX_VALUE;
+	private double lastEval = 0;
 	private int mutations;
 	private int improvements;
 	private double pixelSumOrig;
+	PixelColorHistogram origColorHistogram = new PixelColorHistogram(4);
 	public ImageEvolver(ImageEvolverFrame ui) {
 		start();
 		this.ui = ui;
@@ -194,11 +195,13 @@ public class ImageEvolver extends Thread{
 		return sum;
 	}
 
-	public double calculatePixelSum(BufferedImage bim, boolean includeAlpha){
-		if(bim == null) return Double.MAX_VALUE;
+	public PixelColorHistogram calculatePixelSum(BufferedImage bim, boolean includeAlpha){
+		if(bim == null) return null;
 		final byte[] pixels = ((DataBufferByte) bim.getRaster().getDataBuffer()).getData();
 		final boolean hasAlphaChannel = bim.getAlphaRaster() != null;
 		double sum = 0;
+		PixelColorHistogram pch = new PixelColorHistogram(4);
+		int r,g,b;
 		if (hasAlphaChannel) {
 			final int pixelLength = 4;
 			for (int pixel = 0; pixel < pixels.length; pixel += pixelLength) {
@@ -206,32 +209,67 @@ public class ImageEvolver extends Thread{
 					sum += (pixels[pixel]  & 0xff);// << 24; 
 					//System.out.println("A: " + (pixels[pixel] & 0xff));
 				}
-				sum += (pixels[pixel + 1]  & 0xff); 
+				sum += b =  (pixels[pixel + 1]  & 0xff); 
 				//System.out.print(", B: " + (pixels[pixel + 1] & 0xff));
-				sum += (pixels[pixel + 2]  & 0xff);// << 8;
+				sum += g = (pixels[pixel + 2]  & 0xff);// << 8;
 				//System.out.print(", G: " + (pixels[pixel + 2] & 0xff));
-				sum += (pixels[pixel + 3]  & 0xff);// << 16;
+				sum += r = (pixels[pixel + 3]  & 0xff);// << 16;
 				//System.out.println(", R: " + (pixels[pixel + 3] & 0xff));
+				pch.increment(r, g, b);
 			}
 		} else {
 			final int pixelLength = 3;
 			for (int pixel = 0; pixel < pixels.length; pixel += pixelLength) {
-				sum += (pixels[pixel] & 0xff); // blue
+				sum += b = (pixels[pixel] & 0xff); // blue
 				//System.out.print("B: " + (pixels[pixel] & 0xff));
-				sum += (pixels[pixel + 1] & 0xff); // green
+				sum += g = (pixels[pixel + 1] & 0xff); // green
 				//System.out.print(", G: " + (pixels[pixel + 1] & 0xff));
-				sum += (pixels[pixel + 2] & 0xff); // red
+				sum += r = (pixels[pixel + 2] & 0xff); // red
 				//System.out.println(", R: " + (pixels[pixel + 2] & 0xff));
+				pch.increment(r, g, b);
 			}
 		}
-		return sum;
+		//System.out.println(pch);
+		return pch;
 	}
 	
-	public double subEval(int b1, int g1, int r1, int b2, int g2, int r2){
-		//TODO:
-			return 0;
+	public PixelColorHistogram buildHistogram(BufferedImage bim, boolean includeAlpha){
+		if(bim == null) return null;
+		final byte[] pixels = ((DataBufferByte) bim.getRaster().getDataBuffer()).getData();
+		final boolean hasAlphaChannel = bim.getAlphaRaster() != null;
+		double sum = 0;
+		PixelColorHistogram pch = new PixelColorHistogram(4);
+		int r,g,b;
+		if (hasAlphaChannel) {
+			final int pixelLength = 4;
+			for (int pixel = 0; pixel < pixels.length; pixel += pixelLength) {
+				if(includeAlpha){
+					sum += (pixels[pixel]  & 0xff);// << 24; 
+					//System.out.println("A: " + (pixels[pixel] & 0xff));
+				}
+				sum += b =  (pixels[pixel + 1]  & 0xff); 
+				//System.out.print(", B: " + (pixels[pixel + 1] & 0xff));
+				sum += g = (pixels[pixel + 2]  & 0xff);// << 8;
+				//System.out.print(", G: " + (pixels[pixel + 2] & 0xff));
+				sum += r = (pixels[pixel + 3]  & 0xff);// << 16;
+				//System.out.println(", R: " + (pixels[pixel + 3] & 0xff));
+				pch.increment(r, g, b);
+			}
+		} else {
+			final int pixelLength = 3;
+			for (int pixel = 0; pixel < pixels.length; pixel += pixelLength) {
+				sum += b = (pixels[pixel] & 0xff); // blue
+				//System.out.print("B: " + (pixels[pixel] & 0xff));
+				sum += g = (pixels[pixel + 1] & 0xff); // green
+				//System.out.print(", G: " + (pixels[pixel + 1] & 0xff));
+				sum += r = (pixels[pixel + 2] & 0xff); // red
+				//System.out.println(", R: " + (pixels[pixel + 2] & 0xff));
+				pch.increment(r, g, b);
+			}
+		}
+		//System.out.println(pch);
+		return pch;
 	}
-	
 
 	private double calculateSumOfPixelDifferences(BufferedImage bim1, BufferedImage bim2) {
 		if(bim1 == null || bim2 == null || bim1.getWidth() != bim2.getWidth() || bim1.getHeight() != bim2.getHeight()){
@@ -239,9 +277,10 @@ public class ImageEvolver extends Thread{
 		}
 		//double bim1Sum = calculatePixelSum(bim1, false);
 		//System.out.print("I1: " + bim1Sum);
-		double bim2Sum = calculatePixelSum(bim2, false);
+		//double bim2Sum = calculatePixelSum(bim2, false);
+		origColorHistogram.getDifference(buildHistogram(bim2,false));
 		//System.out.println(" | I2: " + bim2Sum);
-		return pixelSumOrig - bim2Sum;
+		return 0;//pixelSumOrig - bim2Sum;
 	}	
 
 	public void paintImage(Graphics g, ArrayList<ColoredPolygon> polygons){
@@ -263,7 +302,8 @@ public class ImageEvolver extends Thread{
 		if(i != null){
 			width = orig.getWidth();
 			height = orig.getHeight();
-			pixelSumOrig = this.calculatePixelSum(orig, false);
+			//pixelSumOrig = this.calculatePixelSum(orig, false);
+			origColorHistogram = buildHistogram(orig,false);
 		}
 	}
 
@@ -314,7 +354,6 @@ public class ImageEvolver extends Thread{
 		polygons.clear();
 		best = test = null;
 		lastEval = Double.MAX_VALUE;
-		pixelSumOrig = 0;
 	}
 
 	public void setTestImage(BufferedImage image){
@@ -328,14 +367,14 @@ public class ImageEvolver extends Thread{
 			lastEval = newEval;
 			best = test;
 			ui.updateBestCanvas();
-			ui.updateFitnessAndImprovementsLabel(++improvements, Math.abs(1 - lastEval/255.0/3/width/height));
+			ui.updateFitnessAndImprovementsLabel(++improvements, Math.abs(1 - lastEval/width/height));
 			return true;
 		}
 		return false;
 	}
 	
 	public double evaluate(){
-		return Math.abs(pixelSumOrig - calculatePixelSum(test, false));
+		return origColorHistogram.getDifference(buildHistogram(test,false));
 	}
 	
 	public void clear() {
