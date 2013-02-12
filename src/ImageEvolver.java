@@ -7,6 +7,7 @@ import java.awt.image.ColorModel;
 import java.awt.image.DataBufferByte;
 import java.awt.image.WritableRaster;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 
@@ -15,7 +16,7 @@ public class ImageEvolver extends Thread{
 	private boolean isFinished;
 	private BufferedImage orig, best, test;
 	private ImageEvolverFrame ui;
-	private ArrayList<ColoredPolygon> polygons = new ArrayList<ColoredPolygon>();
+	private List<ColoredPolygon> polygons = new ArrayList<ColoredPolygon>();
 	private int polyCount, vertCount, width, height;
 	private double lastEval = 0;
 	private int mutations;
@@ -26,8 +27,8 @@ public class ImageEvolver extends Thread{
 	public ImageEvolver(ImageEvolverFrame ui) {
 		start();
 		this.ui = ui;
-		polyCount = 5;
-		vertCount = 6;
+		polyCount = ui.polyCount;
+		vertCount = ui.vertCount;
 		width = 200;
 		height = 200;
 		histogramRows = 7;
@@ -35,9 +36,42 @@ public class ImageEvolver extends Thread{
 		histogramColorPartitioningFactor = 7;
 	}
 
-	public void setParameters(int polyCount, int vertCount, int w, int h){
-		this.polyCount = polyCount;
-		this.vertCount = vertCount;
+	public void setParameters(final int polys, final int verts, int w, int h){
+		boolean updateBestAndTest = false;
+		if(polys < polyCount && polygons.size() > polys){
+			polygons = polygons.subList(0, polys);
+			updateBestAndTest = true;
+		}
+		polyCount = polys;
+		if(verts !=  vertCount){
+			int[] oldX = null;
+			int[] oldY = null;
+			//Checks before for loop to save time
+			if(verts < vertCount){
+				for(ColoredPolygon p: polygons){
+					oldX = p.xpoints;
+					oldY = p.ypoints;
+					p.reset();
+					for(int i = 0; i < verts; i++){
+						p.addPoint(oldX[i], oldY[i]);
+					}
+				}
+			}
+			else{ 
+				//verts > vertCount
+				for(ColoredPolygon p: polygons){
+					for(int i = verts - vertCount; i > 0; i--){
+						p.addPoint(p.xpoints[vertCount - 1], p.ypoints[vertCount - 1]);
+					}
+				}
+			}
+			updateBestAndTest = true;
+			vertCount = verts;
+		}
+		if(updateBestAndTest){
+			best = test = createImageFromPolygons(polygons);
+			lastEval = evaluate();
+		}
 		this.width = w;
 		this.height = h;
 	}
@@ -223,7 +257,7 @@ public class ImageEvolver extends Thread{
 		//System.out.println(pch);
 		return pch;
 	}
-	
+
 	public ColorHistogram buildHistogram(BufferedImage bim, boolean includeAlpha){
 		if(bim == null) return null;
 		final byte[] pixels = ((DataBufferByte) bim.getRaster().getDataBuffer()).getData();
@@ -253,7 +287,7 @@ public class ImageEvolver extends Thread{
 		}
 		return histogram;
 	}
-	
+
 	public PartitionedColorHistogram buildPartitionedHistogram(BufferedImage bim, boolean includeAlpha){
 		if(bim == null) return null;
 		final byte[] pixels = ((DataBufferByte) bim.getRaster().getDataBuffer()).getData();
@@ -302,7 +336,7 @@ public class ImageEvolver extends Thread{
 		return 0;//pixelSumOrig - bim2Sum;
 	}	
 
-	public void paintImage(Graphics g, ArrayList<ColoredPolygon> polygons){
+	public void paintImage(Graphics g, List<ColoredPolygon> polygons){
 		Graphics2D g2 = (Graphics2D) g;
 		g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 		g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
@@ -321,6 +355,7 @@ public class ImageEvolver extends Thread{
 		if(i != null){
 			width = orig.getWidth();
 			height = orig.getHeight();
+			lastEval = Double.MAX_VALUE;
 			//pixelSumOrig = this.calculatePixelSum(orig, false);
 			origColorHistogram = buildPartitionedHistogram(orig,false);
 		}
@@ -330,7 +365,7 @@ public class ImageEvolver extends Thread{
 		return test;
 	}
 
-	public BufferedImage createImageFromPolygons(ArrayList<ColoredPolygon> polygons){
+	public BufferedImage createImageFromPolygons(List<ColoredPolygon> polygons){
 		//BufferedImage.TYPE_INT_ARGB + setOpaque(false) - for images that include alpha (are transparent) 
 		BufferedImage newImage = new BufferedImage(width, height, BufferedImage.TYPE_4BYTE_ABGR); 
 		Graphics g = newImage.getGraphics();
@@ -362,13 +397,13 @@ public class ImageEvolver extends Thread{
 	}
 
 	public int getVertCount() {
-		return polyCount;
+		return vertCount;
 	}
 
-	public int getPolyCount() {
+	public int getMaxPolyCount() {
 		return polyCount;
 	}
-
+	
 	public void clearPolygons() {
 		polygons.clear();
 		best = test = null;
@@ -386,16 +421,17 @@ public class ImageEvolver extends Thread{
 			lastEval = newEval;
 			best = test;
 			ui.updateBestCanvas();
-			ui.updateFitnessAndImprovementsLabel(++improvements, Math.abs(1 - lastEval/width/height));
+			//System.out.println(lastEval);
+			ui.updateFitnessAndImprovementsLabel(++improvements, 1-Math.abs(lastEval/width/height/255/3*100));
 			return true;
 		}
 		return false;
 	}
-	
+
 	public double evaluate(){
 		return origColorHistogram.getDifference(buildPartitionedHistogram(test,false));
 	}
-	
+
 	public void clear() {
 		clearPolygons();
 		mutations = 0;

@@ -158,7 +158,6 @@ public class ImageEvolverFrame extends JFrame {
 				if(polyCount > 1){
 					polyCount--;
 					polyLabel.setText("Polygons: " + polyCount);
-					updateEvolver();
 				}
 			}
 		});
@@ -169,7 +168,6 @@ public class ImageEvolverFrame extends JFrame {
 			public void actionPerformed(ActionEvent ae) {
 				polyCount++;
 				polyLabel.setText("Polygons: " + polyCount);
-				updateEvolver();
 			}
 		});
 		add(polyPanel);
@@ -184,7 +182,6 @@ public class ImageEvolverFrame extends JFrame {
 				if(vertCount > 3){
 					vertCount--;
 					vertLabel.setText("Vertices: " + vertCount);
-					updateEvolver();
 				}
 			}
 		});
@@ -195,7 +192,6 @@ public class ImageEvolverFrame extends JFrame {
 			public void actionPerformed(ActionEvent ae) {
 				vertCount++;
 				vertLabel.setText("Vertices: " + vertCount);
-				updateEvolver();
 			}
 		});
 		add(vertPanel);
@@ -273,6 +269,10 @@ public class ImageEvolverFrame extends JFrame {
 					console.setText("Stopped.");
 				}
 				else{
+					if(evolver.getMaxPolyCount() != polyCount || evolver.getVertCount() != vertCount)
+					{
+						updateEvolver();
+					}
 					evolver.startRunning();
 					for(Component c: modComponentList)
 						c.setEnabled(false);
@@ -494,12 +494,6 @@ public class ImageEvolverFrame extends JFrame {
 			evolver.stopRunning();
 		}
 		evolver.setImage(image);
-		if(evolver.getPolyCount() != polyCount){
-			evolver.clearPolygons();
-		}
-		if(evolver.getVertCount() != vertCount){
-			evolver.clearPolygons();
-		}
 		if(image != null){
 			evolver.setParameters(polyCount, vertCount, image.getWidth(), image.getHeight());
 		}
