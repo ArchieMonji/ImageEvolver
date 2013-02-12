@@ -294,6 +294,7 @@ public class ImageEvolverFrame extends JFrame {
 	}
 
 	protected void randomizePolygons() {
+		evolver.clear();
 		evolver.setParameters(polyCount, vertCount, originalImageCanvas.getWidth(), originalImageCanvas.getHeight());
 		evolver.setTestImage(evolver.createRandomPolygons());
 		testCanvas.setImage(evolver.getTestImage());

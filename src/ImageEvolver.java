@@ -97,6 +97,7 @@ public class ImageEvolver extends Thread{
 					}
 					ui.updateMutationsLabel(++mutations);
 				}
+
 				//System.out.println("Best: " + lastEval + " | New: " + calculateSumOfPixelDifferences(orig,test));
 			}
 			try {
@@ -146,7 +147,7 @@ public class ImageEvolver extends Thread{
 	private boolean addPolygon(Random random){
 		//if no polygons, try making a polygon 
 		if(polygons.size() == 0){
-			ColoredPolygon testPolygon = createRandomPolygon(false);
+			ColoredPolygon testPolygon = createRandomPolygon(true);
 			polygons.add(testPolygon);
 			test = createImageFromPolygons(polygons);
 			ui.updateTestCanvas();
@@ -159,12 +160,13 @@ public class ImageEvolver extends Thread{
 			//choose between making new polygon or mutating existing polygon
 			boolean createNewPolygon = random.nextBoolean();
 			if(createNewPolygon){
-				ColoredPolygon testPolygon = createRandomPolygon(false);
+				ColoredPolygon testPolygon = createRandomPolygon(true);
 				polygons.add(testPolygon);
 				test = createImageFromPolygons(polygons);
 				ui.updateTestCanvas();
+				lastEval = evaluate();
 				if(!goodMutation()){
-					polygons.remove(testPolygon);
+					//polygons.remove(testPolygon);
 				}
 				return true;
 			}
@@ -195,10 +197,10 @@ public class ImageEvolver extends Thread{
 		isRunning = false;
 	}
 
-	public ArrayList<ColoredPolygon> initRandomizedPolygons() {
-		ArrayList<ColoredPolygon> polygons = new ArrayList<ColoredPolygon>();
+	public List<ColoredPolygon> initRandomizedPolygons() {
+		polygons.clear();
 		for(int i = 0; i < polyCount; i++){
-			polygons.add(createRandomPolygon(false));
+			polygons.add(createRandomPolygon(true));
 		}
 		return polygons;
 	}
@@ -382,7 +384,10 @@ public class ImageEvolver extends Thread{
 	}
 
 	public BufferedImage createRandomPolygons() {
-		return createImageFromPolygons(initRandomizedPolygons());
+		test = createImageFromPolygons(initRandomizedPolygons());
+		lastEval = evaluate();
+		System.out.println(lastEval);
+		return test;
 	}
 
 	public boolean isRunning() {
