@@ -55,18 +55,17 @@ public class Canvas extends JPanel {
 			setSize(200,200);
 		}
 	}
-	/**
+	
 	public BufferedImage getCanvasImage(){
 		//BufferedImage.TYPE_INT_ARGB + setOpaque(false) - for images that include alpha (are transparent) 
 		BufferedImage newImage = new BufferedImage(getWidth(), getHeight(), BufferedImage.TYPE_INT_RGB); 
 		Graphics g = newImage.getGraphics();
 		paintComponent(g);
-		image = newImage;
-		return image;
+		//image = newImage;
+		return newImage;
 	}
 	
 	public BufferedImage getImage(){
 		return image;
 	}
-	**/
 }

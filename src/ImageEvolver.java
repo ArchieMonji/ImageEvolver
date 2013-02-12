@@ -21,7 +21,8 @@ public class ImageEvolver extends Thread{
 	private int mutations;
 	private int improvements;
 	private double pixelSumOrig;
-	PixelColorHistogram origColorHistogram = new PixelColorHistogram(4);
+	public int histogramRows, histogramCols, histogramColorPartitioningFactor;
+	PartitionedColorHistogram origColorHistogram = new PartitionedColorHistogram(4,4,4);
 	public ImageEvolver(ImageEvolverFrame ui) {
 		start();
 		this.ui = ui;
@@ -29,6 +30,9 @@ public class ImageEvolver extends Thread{
 		vertCount = 6;
 		width = 200;
 		height = 200;
+		histogramRows = 7;
+		histogramCols = 7;
+		histogramColorPartitioningFactor = 7;
 	}
 
 	public void setParameters(int polyCount, int vertCount, int w, int h){
@@ -50,8 +54,8 @@ public class ImageEvolver extends Thread{
 				}
 				//mutating existing polygon
 				if(createdPolygon != true){
-					boolean changeColor = random.nextBoolean();
-					if(changeColor){
+					int changeColor = random.nextInt(3);
+					if(changeColor == 0){
 						mutateColor(polygons.get(random.nextInt(polygons.size())), random);
 					}
 					else{
@@ -76,9 +80,7 @@ public class ImageEvolver extends Thread{
 		testPolygon.xpoints[verticeToChange] = random.nextInt(width);
 		testPolygon.ypoints[verticeToChange] = random.nextInt(height);
 		test = createImageFromPolygons(polygons);
-		if(mutations % uiUpdateDelay == 0){
-			ui.updateTestCanvas();
-		}
+		ui.updateTestCanvas();
 		//System.out.println("ORIG: " + calculatePixelSum(orig));
 		//System.out.println("TEST: " + calculatePixelSum(test));
 		if(!goodMutation()){
@@ -102,23 +104,18 @@ public class ImageEvolver extends Thread{
 		}
 		testPolygon.setColor(newColor);
 		test = createImageFromPolygons(polygons);
-		if(mutations % uiUpdateDelay == 0){
-			ui.updateTestCanvas();
-		}
+		ui.updateTestCanvas();
 		if(!goodMutation()){
 			testPolygon.setColor(oldColor);
 		}
 	}
-	int uiUpdateDelay = 50;
 	private boolean addPolygon(Random random){
 		//if no polygons, try making a polygon 
 		if(polygons.size() == 0){
-			ColoredPolygon testPolygon = createRandomPolygon();
+			ColoredPolygon testPolygon = createRandomPolygon(false);
 			polygons.add(testPolygon);
 			test = createImageFromPolygons(polygons);
-			if(mutations % uiUpdateDelay == 0){
-				ui.updateTestCanvas();
-			}
+			ui.updateTestCanvas();
 			if(!goodMutation()){
 				polygons.remove(testPolygon);
 			}
@@ -128,12 +125,10 @@ public class ImageEvolver extends Thread{
 			//choose between making new polygon or mutating existing polygon
 			boolean createNewPolygon = random.nextBoolean();
 			if(createNewPolygon){
-				ColoredPolygon testPolygon = createRandomPolygon();
+				ColoredPolygon testPolygon = createRandomPolygon(false);
 				polygons.add(testPolygon);
 				test = createImageFromPolygons(polygons);
-				if(mutations % uiUpdateDelay == 0){
-					ui.updateTestCanvas();
-				}
+				ui.updateTestCanvas();
 				if(!goodMutation()){
 					polygons.remove(testPolygon);
 				}
@@ -143,11 +138,18 @@ public class ImageEvolver extends Thread{
 		return false;
 	}
 
-	private ColoredPolygon createRandomPolygon() {
+	private ColoredPolygon createRandomPolygon(boolean initRandomColor) {
 		Random r = new Random();
-		ColoredPolygon p = new ColoredPolygon(Color.black);//new ColoredPolygon(new Color(r.nextFloat(),r.nextFloat(),r.nextFloat(),r.nextFloat()));
-		for(int v = 0; v < vertCount; v++)
+		ColoredPolygon p = null;
+		if(initRandomColor){
+			p = new ColoredPolygon(new Color(r.nextFloat(),r.nextFloat(),r.nextFloat(),r.nextFloat()));
+		}
+		else{
+			p = new ColoredPolygon(Color.black);
+		}
+		for(int v = 0; v < vertCount; v++){
 			p.addPoint((int)(r.nextDouble() * width),(int)(r.nextDouble() * height));
+		}
 		return p;
 	}
 
@@ -162,7 +164,7 @@ public class ImageEvolver extends Thread{
 	public ArrayList<ColoredPolygon> initRandomizedPolygons() {
 		ArrayList<ColoredPolygon> polygons = new ArrayList<ColoredPolygon>();
 		for(int i = 0; i < polyCount; i++){
-			polygons.add(createRandomPolygon());
+			polygons.add(createRandomPolygon(false));
 		}
 		return polygons;
 	}
@@ -176,13 +178,9 @@ public class ImageEvolver extends Thread{
 			final int pixelLength = 4;
 			for (int pixel = 0; pixel < pixels.length; pixel += pixelLength) {
 				sum += ((double) pixels[pixel])/255; // alpha
-				//System.out.println(sum);
 				sum += ((double) pixels[pixel + 1])/255; // blue
-				//System.out.println(sum);
 				sum += (((double) pixels[pixel + 2]))/255; // green
-				//System.out.println(sum);
 				sum += (((double) pixels[pixel + 3]))/255; // red
-				//System.out.println(sum);
 			}
 		} else {
 			final int pixelLength = 3;
@@ -195,80 +193,101 @@ public class ImageEvolver extends Thread{
 		return sum;
 	}
 
-	public PixelColorHistogram calculatePixelSum(BufferedImage bim, boolean includeAlpha){
+	public ColorHistogram calculatePixelSum(BufferedImage bim, boolean includeAlpha){
 		if(bim == null) return null;
 		final byte[] pixels = ((DataBufferByte) bim.getRaster().getDataBuffer()).getData();
 		final boolean hasAlphaChannel = bim.getAlphaRaster() != null;
 		double sum = 0;
-		PixelColorHistogram pch = new PixelColorHistogram(4);
+		ColorHistogram pch = new ColorHistogram(4);
 		int r,g,b;
 		if (hasAlphaChannel) {
 			final int pixelLength = 4;
 			for (int pixel = 0; pixel < pixels.length; pixel += pixelLength) {
 				if(includeAlpha){
-					sum += (pixels[pixel]  & 0xff);// << 24; 
-					//System.out.println("A: " + (pixels[pixel] & 0xff));
+					sum += (pixels[pixel]  & 0xff);// alpha
 				}
-				sum += b =  (pixels[pixel + 1]  & 0xff); 
-				//System.out.print(", B: " + (pixels[pixel + 1] & 0xff));
-				sum += g = (pixels[pixel + 2]  & 0xff);// << 8;
-				//System.out.print(", G: " + (pixels[pixel + 2] & 0xff));
-				sum += r = (pixels[pixel + 3]  & 0xff);// << 16;
-				//System.out.println(", R: " + (pixels[pixel + 3] & 0xff));
-				pch.increment(r, g, b);
+				sum += b =  (pixels[pixel + 1]  & 0xff); //blue
+				sum += g = (pixels[pixel + 2]  & 0xff);// green
+				sum += r = (pixels[pixel + 3]  & 0xff);// red
+				pch.incrementPixelCount(r, g, b);
 			}
 		} else {
 			final int pixelLength = 3;
 			for (int pixel = 0; pixel < pixels.length; pixel += pixelLength) {
 				sum += b = (pixels[pixel] & 0xff); // blue
-				//System.out.print("B: " + (pixels[pixel] & 0xff));
 				sum += g = (pixels[pixel + 1] & 0xff); // green
-				//System.out.print(", G: " + (pixels[pixel + 1] & 0xff));
 				sum += r = (pixels[pixel + 2] & 0xff); // red
-				//System.out.println(", R: " + (pixels[pixel + 2] & 0xff));
-				pch.increment(r, g, b);
+				pch.incrementPixelCount(r, g, b);
 			}
 		}
 		//System.out.println(pch);
 		return pch;
 	}
 	
-	public PixelColorHistogram buildHistogram(BufferedImage bim, boolean includeAlpha){
+	public ColorHistogram buildHistogram(BufferedImage bim, boolean includeAlpha){
 		if(bim == null) return null;
 		final byte[] pixels = ((DataBufferByte) bim.getRaster().getDataBuffer()).getData();
 		final boolean hasAlphaChannel = bim.getAlphaRaster() != null;
-		double sum = 0;
-		PixelColorHistogram pch = new PixelColorHistogram(4);
-		int r,g,b;
+		ColorHistogram histogram = new ColorHistogram(histogramColorPartitioningFactor);
+		int a,r,g,b;
 		if (hasAlphaChannel) {
 			final int pixelLength = 4;
 			for (int pixel = 0; pixel < pixels.length; pixel += pixelLength) {
-				if(includeAlpha){
-					sum += (pixels[pixel]  & 0xff);// << 24; 
-					//System.out.println("A: " + (pixels[pixel] & 0xff));
-				}
-				sum += b =  (pixels[pixel + 1]  & 0xff); 
-				//System.out.print(", B: " + (pixels[pixel + 1] & 0xff));
-				sum += g = (pixels[pixel + 2]  & 0xff);// << 8;
-				//System.out.print(", G: " + (pixels[pixel + 2] & 0xff));
-				sum += r = (pixels[pixel + 3]  & 0xff);// << 16;
-				//System.out.println(", R: " + (pixels[pixel + 3] & 0xff));
-				pch.increment(r, g, b);
+				//Build AlphaHistogram, or ignore alpha
+				/*if(includeAlpha){
+					a += (pixels[pixel]  & 0xff); //alpha
+				}*/
+				b =  (pixels[pixel + 1]  & 0xff); //blue
+				g = (pixels[pixel + 2]  & 0xff); //green
+				r = (pixels[pixel + 3]  & 0xff); //red
+				histogram.incrementPixelCount(r, g, b);
 			}
 		} else {
 			final int pixelLength = 3;
 			for (int pixel = 0; pixel < pixels.length; pixel += pixelLength) {
-				sum += b = (pixels[pixel] & 0xff); // blue
-				//System.out.print("B: " + (pixels[pixel] & 0xff));
-				sum += g = (pixels[pixel + 1] & 0xff); // green
-				//System.out.print(", G: " + (pixels[pixel + 1] & 0xff));
-				sum += r = (pixels[pixel + 2] & 0xff); // red
-				//System.out.println(", R: " + (pixels[pixel + 2] & 0xff));
-				pch.increment(r, g, b);
+				b = (pixels[pixel] & 0xff); // blue
+				g = (pixels[pixel + 1] & 0xff); // green
+				r = (pixels[pixel + 2] & 0xff); // red
+				histogram.incrementPixelCount(r, g, b);
 			}
 		}
-		//System.out.println(pch);
-		return pch;
+		return histogram;
+	}
+	
+	public PartitionedColorHistogram buildPartitionedHistogram(BufferedImage bim, boolean includeAlpha){
+		if(bim == null) return null;
+		final byte[] pixels = ((DataBufferByte) bim.getRaster().getDataBuffer()).getData();
+		final boolean hasAlphaChannel = bim.getAlphaRaster() != null;
+		PartitionedColorHistogram histogram = new PartitionedColorHistogram(histogramRows,histogramCols,histogramColorPartitioningFactor);
+		int row,col,r,g,b;
+		int area = width * height;
+		if (hasAlphaChannel) {
+			final int pixelLength = 4;
+			for (int pixel = 0; pixel < pixels.length; pixel += pixelLength) {
+				//Build AlphaHistogram, or ignore alpha
+				/*if(includeAlpha){
+					a += (pixels[pixel]  & 0xff); //alpha
+				}*/
+				row = pixel / pixelLength * histogram.getCols() / area;
+				col = ((pixel/pixelLength) % width) * histogram.getCols() / width;
+				b =  (pixels[pixel + 1]  & 0xff); // blue
+				g = (pixels[pixel + 2]  & 0xff); // green
+				r = (pixels[pixel + 3]  & 0xff); // red
+				histogram.incrementPixelCount(row, col, r, g, b);
+			}
+		} else {
+			final int pixelLength = 3;
+			for (int pixel = 0; pixel < pixels.length; pixel += pixelLength) {
+				row = pixel / pixelLength * histogram.getCols() / area;
+				col = ((pixel/pixelLength) % width) * histogram.getCols() / width;
+				b = (pixels[pixel] & 0xff); // blue
+				g = (pixels[pixel + 1] & 0xff); // green
+				r = (pixels[pixel + 2] & 0xff); // red
+				histogram.incrementPixelCount(row, col, r, g, b);
+			}
+		}
+		//System.out.println(histogram);
+		return histogram;
 	}
 
 	private double calculateSumOfPixelDifferences(BufferedImage bim1, BufferedImage bim2) {
@@ -278,7 +297,7 @@ public class ImageEvolver extends Thread{
 		//double bim1Sum = calculatePixelSum(bim1, false);
 		//System.out.print("I1: " + bim1Sum);
 		//double bim2Sum = calculatePixelSum(bim2, false);
-		origColorHistogram.getDifference(buildHistogram(bim2,false));
+		origColorHistogram.getDifference(buildPartitionedHistogram(bim2,false));
 		//System.out.println(" | I2: " + bim2Sum);
 		return 0;//pixelSumOrig - bim2Sum;
 	}	
@@ -303,7 +322,7 @@ public class ImageEvolver extends Thread{
 			width = orig.getWidth();
 			height = orig.getHeight();
 			//pixelSumOrig = this.calculatePixelSum(orig, false);
-			origColorHistogram = buildHistogram(orig,false);
+			origColorHistogram = buildPartitionedHistogram(orig,false);
 		}
 	}
 
@@ -374,7 +393,7 @@ public class ImageEvolver extends Thread{
 	}
 	
 	public double evaluate(){
-		return origColorHistogram.getDifference(buildHistogram(test,false));
+		return origColorHistogram.getDifference(buildPartitionedHistogram(test,false));
 	}
 	
 	public void clear() {

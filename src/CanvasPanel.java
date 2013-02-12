@@ -7,7 +7,16 @@
  */
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.FileDialog;
+import java.awt.Graphics;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
+import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.JLabel;
@@ -43,5 +52,9 @@ public class CanvasPanel extends JPanel {
 		borderPanel.setMinimumSize(newSize);
 		borderPanel.setPreferredSize(newSize);
 		canvas.setSize(width, height);
+	}
+	
+	public Canvas getCanvas(){
+		return canvas;
 	}
 }
