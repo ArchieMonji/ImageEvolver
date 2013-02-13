@@ -28,7 +28,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 
 public class ImageEvolverFrame extends JFrame {
-	int polyCount = 10;
+	int polyCount = 100;
 	int vertCount = 4;
 	TextField loadFileTextField = new TextField("Path to Image");
 	JButton loadFileButton = new JButton("Load Image");
