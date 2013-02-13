@@ -3,6 +3,7 @@
  * ColoredPolygon
  * Polygon that keeps color information.
  */
+
 import java.awt.Color;
 import java.awt.Polygon;
 

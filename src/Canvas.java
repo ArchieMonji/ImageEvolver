@@ -1,8 +1,8 @@
 /**
  * 2013 Archie Monji
  * 
- * ImageCanvas
- * All drawing happens in the Canvas class
+ * Canvas
+ * For displaying images
  */
 
 import java.awt.Color;

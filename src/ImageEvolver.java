@@ -1,3 +1,10 @@
+/**
+ * 2013 Archie Monji
+ * 
+ * ImageEvolver
+ * Where the magic happens. Evolves a set of polygons to replicate an image.
+ */
+
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
@@ -9,7 +16,6 @@ import java.awt.image.WritableRaster;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-
 
 public class ImageEvolver extends Thread{
 	private boolean isRunning;

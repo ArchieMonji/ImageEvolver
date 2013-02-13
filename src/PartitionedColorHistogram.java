@@ -1,3 +1,11 @@
+/**
+ * 2013 Archie Monji
+ * 
+ * CanvasPainter
+ * For organizing pixels into regions and generating color histograms for each region.
+ * Total Size: Width*height*r*b*g or sizeOfPartition^2 * colorDivisions^3
+ * EXPENSIVE!
+ */
 
 public class PartitionedColorHistogram {
 	private int numCols;

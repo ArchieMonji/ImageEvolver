@@ -1,3 +1,10 @@
+/**
+ * 2013 Archie Monji
+ * ColorHistogram
+ * Organizes pixel data by their rbg.
+ * Total size is numColorDivisions^3
+ * Very EXPENSIVE to calculate quickly and discard. 
+ */
 
 public class ColorHistogram {
 	private int[][][] rgb; 

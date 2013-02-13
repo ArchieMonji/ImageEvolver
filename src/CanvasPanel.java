@@ -3,8 +3,9 @@
  * 
  * CanvasPanel
  * UI Component to help simplify logic for drawing on the Canvas
- * All drawing happens in the Canvas class
+ * Actual drawing happens in the Canvas class
  */
+
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FileDialog;

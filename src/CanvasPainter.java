@@ -1,3 +1,10 @@
+/**
+ * 2013 Archie Monji
+ * 
+ * CanvasPainter
+ * Creates image for saving from Canvases
+ */
+
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 import javax.swing.JPanel;

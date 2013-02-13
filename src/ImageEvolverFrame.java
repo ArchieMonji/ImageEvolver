@@ -1,9 +1,15 @@
+/**
+ * 2013 Archie Monji
+ * 
+ * ImageEvolverFrame
+ * The UI and program entry point.
+ */
+
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FileDialog;
 import java.awt.FlowLayout;
 import java.awt.Frame;
-import java.awt.Graphics;
 import java.awt.GridLayout;
 import java.awt.TextField;
 import java.awt.event.ActionEvent;
@@ -11,7 +17,6 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.image.BufferedImage;
-import java.awt.image.DataBufferByte;
 import java.io.File;
 import java.io.IOException;
 import java.text.DateFormat;
@@ -28,47 +33,48 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 
 public class ImageEvolverFrame extends JFrame {
-	int polyCount = 50;
-	int vertCount = 4;
-	TextField loadFileTextField = new TextField("Path to Image");
-	JButton loadFileButton = new JButton("Load Image");
-	JButton screenshotButton = new JButton("Capture");
-	JButton screenshotButton2 = new JButton("Capture Comparison");
-	Canvas originalImageCanvas = new Canvas();
-	Canvas bestAttemptCanvas = new Canvas();
-	Canvas testCanvas = new Canvas();
-	CanvasPanel cp = new CanvasPanel("Original", originalImageCanvas);
-	CanvasPanel cp2 = new CanvasPanel("Best", bestAttemptCanvas);
-	CanvasPanel cp3 = new CanvasPanel("Try", testCanvas);
-	JLabel console = new JLabel("By Archie Monji, inspired by http://alteredqualia.com/");
-	BufferedImage image;
-	FileDialog fileDialog = new FileDialog(new Frame(), "Select Image");
-	JPanel canvasPanelContainer = new JPanel();
+	//TODO: Fields need organization/refactoring
+	public int polyCount = 120;
+	public int vertCount = 4;
+	private TextField loadFileTextField = new TextField("Path to Image");
+	private JButton loadFileButton = new JButton("Load Image");
+	private JButton screenshotButton = new JButton("Capture");
+	private JButton screenshotButton2 = new JButton("Capture Comparison");
+	private Canvas originalImageCanvas = new Canvas();
+	private Canvas bestAttemptCanvas = new Canvas();
+	private Canvas testCanvas = new Canvas();
+	private CanvasPanel cp = new CanvasPanel("Original", originalImageCanvas);
+	private CanvasPanel cp2 = new CanvasPanel("Best", bestAttemptCanvas);
+	private CanvasPanel cp3 = new CanvasPanel("Try", testCanvas);
+	private JLabel console = new JLabel("By Archie Monji, inspired by http://alteredqualia.com/");
+	private BufferedImage image;
+	private FileDialog fileDialog = new FileDialog(new Frame(), "Select Image");
+	private JPanel canvasPanelContainer = new JPanel();
 	public static int borderThickness = 3;
+	private JPanel polyPanel = new JPanel();
+	private JLabel polyLabel = new JLabel("Polygons: " + polyCount);
+	private JButton addPoly = new JButton("+");
+	private JButton subPoly = new JButton("-");
 	
-	JPanel polyPanel = new JPanel();
-	JLabel polyLabel = new JLabel("Polygons: " + polyCount);
-	JButton addPoly = new JButton("+");
-	JButton subPoly = new JButton("-");
-	
-	JPanel vertPanel = new JPanel();
-	JLabel vertLabel = new JLabel("Vertices: " + vertCount);
-	JButton addVert = new JButton("+");
-	JButton subVert = new JButton("-");
+	private JPanel vertPanel = new JPanel();
+	private JLabel vertLabel = new JLabel("Vertices: " + vertCount);
+	private JButton addVert = new JButton("+");
+	private JButton subVert = new JButton("-");
 
-	JButton refreshButton = new JButton("Refresh");
-	JButton clearButton = new JButton("Clear");
-	ArrayList<Component> modComponentList = new ArrayList<Component>();
+	private JButton refreshButton = new JButton("Refresh");
+	private JButton clearButton = new JButton("Clear");
+	private ArrayList<Component> modComponentList = new ArrayList<Component>();
 	private JButton randomizeButton = new JButton("Randomize");
 	private JButton runButton = new JButton("Run");
 	private String lastFileName;
-	private boolean isRunning;
-	ImageEvolver evolver = new ImageEvolver(this);
-	JLabel mutationsLabel = new JLabel("0");
-	JLabel improvementsLabel = new JLabel("0");
-	JLabel fitnessLabel = new JLabel("0");
-	CanvasPainter canvasPainter = new CanvasPainter();
-	String originalFileName = "";
+	private ImageEvolver evolver = new ImageEvolver(this);
+	private JLabel mutationsLabel = new JLabel("0");
+	private JLabel improvementsLabel = new JLabel("0");
+	private JLabel fitnessLabel = new JLabel("0");
+	private CanvasPainter canvasPainter = new CanvasPainter();
+	private String originalFileName = "";
+	
+	//Entry point
 	public static void main(String[] args){
 		ImageEvolverFrame program = new ImageEvolverFrame();
 		program.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -77,6 +83,7 @@ public class ImageEvolverFrame extends JFrame {
 		program.setVisible(true);
 	}
 	
+	//TODO: Need to do something about this.
 	public void init(){
 		this.setTitle("Image Evolver 0.1");
 		this.setLayout(new BoxLayout(this.getContentPane(), BoxLayout.Y_AXIS));
@@ -302,43 +309,23 @@ public class ImageEvolverFrame extends JFrame {
 		repaint();
 	}
 
-	/**
-	public void randomizePolygons() {
-		canvas3.polygons.clear();
-		int w = canvas.getWidth();
-		int h = canvas.getHeight();
-		for(int i = 0; i < polyCount; i++){
-			ColoredPolygon p = new ColoredPolygon();
-			Random r = new Random();
-			/**
-			float red = r.nextFloat();
-			float blue = r.nextFloat();
-			float green = r.nextFloat();
-			float alpha = r.nextFloat();
-			Color c = new Color(red,blue,green,alpha);
-			System.out.println(red + " " + blue + " " + green + " " + alpha);
 
-			p.setColor(new Color(r.nextFloat(),r.nextFloat(),r.nextFloat(),r.nextFloat()));
-			for(int v = 0; v < vertCount; v++)
-				p.addPoint((int)(r.nextDouble() * w),(int)(r.nextDouble() * h));
-			canvas3.polygons.add(p);
-		}
-		console.setText("Randomized");
-		paint(getGraphics());
-	}
-	 **/
-	//Remembers last save path
-	//Provides default formatted save path for convenience
-	//if user input own save path, then user's save path will be suggested for consequence saves, otherwise uses default format
+	/*
+	 * Remembers last save path
+	 * Provides default formatted save path for convenience
+	 * if user input own save path, then user's save path will be 
+	 * suggested for consequence, otherwise uses default format
+	*/
 	private boolean userSetName;
 	
+	//TODO: Maybe Refactor into a ImageSaver class
 	public void capture() {
 		DateFormat dateFormat = new SimpleDateFormat("[yyyy-MM-dd] (HH-mm-ss)");
 		Date date = new Date();
 		String defaultFileName = "";
 		if(!userSetName){
 			lastFileName = defaultFileName = originalFileName + " " + dateFormat.format(date) +  
-					" (" + MessageFormat.format("{0,number,##%}",fitness) + "fit " + MessageFormat.format("{0,number,####}",mutations/1000) + "k_muts " + polyCount + "p " + vertCount + "v)";
+					" (" + MessageFormat.format("{0,number,##.#%}",fitness) + "fit " + MessageFormat.format("{0,number,####}",mutations/1000) + "k_muts " + polyCount + "p " + vertCount + "v)";
 		}
 		fileDialog.setMode(FileDialog.SAVE);
 		fileDialog.setFile(lastFileName);
@@ -371,7 +358,7 @@ public class ImageEvolverFrame extends JFrame {
 		String defaultFileName = "";
 		if(!userSetName){
 			lastFileName = defaultFileName = originalFileName + " " + dateFormat.format(date) +  
-					" (" + MessageFormat.format("{0,number,##%}",fitness) + "fit " + MessageFormat.format("{0,number,####}",mutations/1000) + "k_muts " + polyCount + "p " + vertCount + "v)";
+					" (" + MessageFormat.format("{0,number,##.#%}",fitness) + "fit " + MessageFormat.format("{0,number,####}",mutations/1000) + "k_muts " + polyCount + "p " + vertCount + "v)";
 		}
 		fileDialog.setMode(FileDialog.SAVE);
 		fileDialog.setFile(lastFileName);
@@ -429,6 +416,7 @@ public class ImageEvolverFrame extends JFrame {
 		updateEvolver();
 	}	
 
+	//TODO: could use work.
 	public void updateCanvases() {
 		bestAttemptCanvas.setImage(evolver.getBestImage());
 		bestAttemptCanvas.repaint();
@@ -446,6 +434,9 @@ public class ImageEvolverFrame extends JFrame {
 		bestAttemptCanvas.repaint();
 	}
 
+	/*
+	 * Pause evolver, set evolver's parameters, then resume (if was running).
+	 */
 	public void updateEvolver(){
 		boolean resume = false;
 		if(evolver.isRunning()){
@@ -468,7 +459,9 @@ public class ImageEvolverFrame extends JFrame {
 		this.mutations = mutations;
 		mutationsLabel.setText(""+ mutations);
 	}
-	double fitness;
+	
+	private double fitness;
+	//TODO: refactor
 	public void updateFitnessAndImprovementsLabel(int improvements, double fitness){
 		improvementsLabel.setText(""+ improvements);
 		this.fitness = fitness;
