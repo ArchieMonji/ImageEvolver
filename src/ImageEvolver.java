@@ -134,14 +134,14 @@ public class ImageEvolver extends Thread{
 		Color oldColor = testPolygon.getColor();
 		Color newColor = null;
 		int parameterToChange = random.nextInt(5);
-		float value = random.nextFloat();
+		float value = random.nextInt(256);
 		switch(parameterToChange){
-		case 0: newColor = new Color(value,(float)oldColor.getGreen()/255, (float)oldColor.getBlue()/255, (float)oldColor.getAlpha()/255); break;
-		case 1: newColor = new Color((float)oldColor.getRed()/255, value, (float)oldColor.getBlue()/255, (float)oldColor.getAlpha()/255); break;
-		case 2: newColor = new Color((float)oldColor.getRed()/255, (float)oldColor.getGreen()/255, value, (float)oldColor.getAlpha()/255); break;
-		case 3: newColor = new Color((float)oldColor.getRed()/255, (float)oldColor.getGreen()/255,(float)oldColor.getBlue()/255, value); break;
-		case 4: newColor = new Color(random.nextFloat(), random.nextFloat(), random.nextFloat(), random.nextFloat()); break;
-		default:  newColor = new Color(random.nextFloat(), random.nextFloat(), random.nextFloat(), random.nextFloat()); break;
+		case 0: newColor = new Color(value,oldColor.getGreen(), oldColor.getBlue(), oldColor.getAlpha()); break;
+		case 1: newColor = new Color(oldColor.getRed(), value, oldColor.getBlue(), oldColor.getAlpha()); break;
+		case 2: newColor = new Color(oldColor.getRed(), oldColor.getGreen(), value, oldColor.getAlpha()); break;
+		case 3: newColor = new Color(oldColor.getRed(), oldColor.getGreen(),oldColor.getBlue(), value); break;
+		case 4: newColor = new Color(random.nextInt(256), random.nextInt(256), random.nextInt(256), random.nextInt(256)); break;
+		default:  newColor = new Color(random.nextInt(256), random.nextInt(256), random.nextInt(256), random.nextInt(256)); break;
 		}
 		testPolygon.setColor(newColor);
 		test = createImageFromPolygons(polygons);
