@@ -28,7 +28,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 
 public class ImageEvolverFrame extends JFrame {
-	int polyCount = 100;
+	int polyCount = 50;
 	int vertCount = 4;
 	TextField loadFileTextField = new TextField("Path to Image");
 	JButton loadFileButton = new JButton("Load Image");
@@ -337,9 +337,8 @@ public class ImageEvolverFrame extends JFrame {
 		Date date = new Date();
 		String defaultFileName = "";
 		if(!userSetName){
-			lastFileName = defaultFileName = dateFormat.format(date) + " " + originalFileName + 
-					" (" + MessageFormat.format("{0,number,##%}",fitness) + "fit " + polyCount + "p " + vertCount + "v)";
-		
+			lastFileName = defaultFileName = originalFileName + " " + dateFormat.format(date) +  
+					" (" + MessageFormat.format("{0,number,##%}",fitness) + "fit " + MessageFormat.format("{0,number,####}",mutations/1000) + "k_muts " + polyCount + "p " + vertCount + "v)";
 		}
 		fileDialog.setMode(FileDialog.SAVE);
 		fileDialog.setFile(lastFileName);
@@ -371,8 +370,8 @@ public class ImageEvolverFrame extends JFrame {
 		Date date = new Date();
 		String defaultFileName = "";
 		if(!userSetName){
-			lastFileName = defaultFileName = dateFormat.format(date) + " " + originalFileName + 
-					" (" + MessageFormat.format("{0,number,##%}",fitness) + "fit " + polyCount + "p " + vertCount + "v)";
+			lastFileName = defaultFileName = originalFileName + " " + dateFormat.format(date) +  
+					" (" + MessageFormat.format("{0,number,##%}",fitness) + "fit " + MessageFormat.format("{0,number,####}",mutations/1000) + "k_muts " + polyCount + "p " + vertCount + "v)";
 		}
 		fileDialog.setMode(FileDialog.SAVE);
 		fileDialog.setFile(lastFileName);
@@ -429,47 +428,6 @@ public class ImageEvolverFrame extends JFrame {
 		}
 		updateEvolver();
 	}	
-	//Author Mota - http://stackoverflow.com/questions/6524196/java-get-pixel-array-from-image
-	private static int[][] convertTo2DWithoutUsingGetRGB(BufferedImage image) {
-		final byte[] pixels = ((DataBufferByte) image.getRaster().getDataBuffer()).getData();
-		final int width = image.getWidth();
-		final int height = image.getHeight();
-		final boolean hasAlphaChannel = image.getAlphaRaster() != null;
-
-		int[][] result = new int[height][width];
-		if (hasAlphaChannel) {
-			final int pixelLength = 4;
-			for (int pixel = 0, row = 0, col = 0; pixel < pixels.length; pixel += pixelLength) {
-				int argb = 0;
-				argb += (((int) pixels[pixel] & 0xff) << 24); // alpha
-				argb += ((int) pixels[pixel + 1] & 0xff); // blue
-				argb += (((int) pixels[pixel + 2] & 0xff) << 8); // green
-				argb += (((int) pixels[pixel + 3] & 0xff) << 16); // red
-				result[row][col] = argb;
-				col++;
-				if (col == width) {
-					col = 0;
-					row++;
-				}
-			}
-		} else {
-			final int pixelLength = 3;
-			for (int pixel = 0, row = 0, col = 0; pixel < pixels.length; pixel += pixelLength) {
-				int argb = 0;
-				argb += -16777216; // 255 alpha
-				argb += ((int) pixels[pixel] & 0xff); // blue
-				argb += (((int) pixels[pixel + 1] & 0xff) << 8); // green
-				argb += (((int) pixels[pixel + 2] & 0xff) << 16); // red
-				result[row][col] = argb;
-				col++;
-				if (col == width) {
-					col = 0;
-					row++;
-				}
-			}
-		}
-		return result;
-	}
 
 	public void updateCanvases() {
 		bestAttemptCanvas.setImage(evolver.getBestImage());
@@ -505,8 +463,9 @@ public class ImageEvolverFrame extends JFrame {
 			evolver.startRunning();
 		}
 	}
-	
+	int mutations;
 	public void updateMutationsLabel(int mutations){
+		this.mutations = mutations;
 		mutationsLabel.setText(""+ mutations);
 	}
 	double fitness;

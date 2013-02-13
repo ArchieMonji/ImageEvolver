@@ -236,26 +236,26 @@ public class ImageEvolver extends Thread{
 		if(bim == null) return null;
 		final byte[] pixels = ((DataBufferByte) bim.getRaster().getDataBuffer()).getData();
 		final boolean hasAlphaChannel = bim.getAlphaRaster() != null;
-		double sum = 0;
 		ColorHistogram pch = new ColorHistogram(4);
 		int r,g,b;
 		if (hasAlphaChannel) {
 			final int pixelLength = 4;
 			for (int pixel = 0; pixel < pixels.length; pixel += pixelLength) {
-				if(includeAlpha){
-					sum += (pixels[pixel]  & 0xff);// alpha
-				}
-				sum += b =  (pixels[pixel + 1]  & 0xff); //blue
-				sum += g = (pixels[pixel + 2]  & 0xff);// green
-				sum += r = (pixels[pixel + 3]  & 0xff);// red
+				//Build AlphaHistogram, or ignore alpha
+				/*if(includeAlpha){
+					a += (pixels[pixel]  & 0xff); //alpha
+				}*/
+				b =  (pixels[pixel + 1]  & 0xff); //blue
+				g = (pixels[pixel + 2]  & 0xff);// green
+				r = (pixels[pixel + 3]  & 0xff);// red
 				pch.incrementPixelCount(r, g, b);
 			}
 		} else {
 			final int pixelLength = 3;
 			for (int pixel = 0; pixel < pixels.length; pixel += pixelLength) {
-				sum += b = (pixels[pixel] & 0xff); // blue
-				sum += g = (pixels[pixel + 1] & 0xff); // green
-				sum += r = (pixels[pixel + 2] & 0xff); // red
+				b = (pixels[pixel] & 0xff); // blue
+				g = (pixels[pixel + 1] & 0xff); // green
+				r = (pixels[pixel + 2] & 0xff); // red
 				pch.incrementPixelCount(r, g, b);
 			}
 		}
@@ -343,10 +343,7 @@ public class ImageEvolver extends Thread{
 		}
 		int img1PixelLength = img1hasAlphaChannel? 4 : 3;
 		int img2PixelLength = img2hasAlphaChannel? 4 : 3;
-		int pix1 = img1hasAlphaChannel? 1 : 0;
-		
-		int pix2 = img2hasAlphaChannel? 1 : 0;
-		for (; pix1 < p1.length; pix1 += img1PixelLength, pix2 += img2PixelLength) {
+		for (int pix1 = img1hasAlphaChannel? 1 : 0, pix2 = img2hasAlphaChannel? 1 : 0; pix1 < p1.length; pix1 += img1PixelLength, pix2 += img2PixelLength) {
 			//Build AlphaHistogram, or ignore alpha
 			if(includeAlpha){
 				sum += (int)(p1[pix1 - 1]  & 0xff) - (int)(p1[pix1 - 1]  & 0xff); //alpha
