@@ -66,8 +66,4 @@ public class Canvas extends JPanel {
 		//image = newImage;
 		return newImage;
 	}
-	
-	public BufferedImage getImage(){
-		return image;
-	}
 }

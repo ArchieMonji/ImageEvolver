@@ -411,11 +411,11 @@ public class ImageEvolver extends Thread{
 		for (int pix1 = img1hasAlphaChannel? 1 : 0, pix2 = img2hasAlphaChannel? 1 : 0; pix1 < p1.length; pix1 += img1PixelLength, pix2 += img2PixelLength) {
 			//Build AlphaHistogram, or ignore alpha
 			if(includeAlpha){
-				sum += (int)(p1[pix1 - 1]  & 0xff) - (int)(p1[pix1 - 1]  & 0xff); //alpha
+				sum += (p1[pix1 - 1]  & 0xff) - (p1[pix1 - 1]  & 0xff); //alpha
 			}
-			sum += Math.abs((int)(p1[pix1 + 0]  & 0xff) 	- (int)(p2[pix2 + 0]  & 0xff)); // blue
-			sum += Math.abs((int)(p1[pix1 + 1]  & 0xff) 	- (int)(p2[pix2 + 1]  & 0xff)); // green
-			sum += Math.abs((int)(p1[pix1 + 2]  & 0xff) 	- (int)(p2[pix2 + 2]  & 0xff)); // red
+			sum += Math.abs((p1[pix1 + 0]  & 0xff) 	- (p2[pix2 + 0]  & 0xff)); // blue
+			sum += Math.abs((p1[pix1 + 1]  & 0xff) 	- (p2[pix2 + 1]  & 0xff)); // green
+			sum += Math.abs((p1[pix1 + 2]  & 0xff) 	- (p2[pix2 + 2]  & 0xff)); // red
 		}
 		return sum;
 	}	

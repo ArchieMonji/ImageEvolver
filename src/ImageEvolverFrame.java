@@ -45,6 +45,7 @@ public class ImageEvolverFrame extends JFrame{
 	private JButton screenshotButton = new JButton("Capture");
 	private JButton screenshotButton2 = new JButton("Capture Comparison");
 	private JButton exportDataButton = new JButton("Export Data");
+	private JButton stipplizeButton = new JButton("Stipplize");
 	private Canvas originalImageCanvas = new Canvas();
 	private Canvas bestAttemptCanvas = new Canvas();
 	private Canvas testCanvas = new Canvas();
@@ -65,7 +66,11 @@ public class ImageEvolverFrame extends JFrame{
 	private JLabel vertLabel = new JLabel("Vertices: " + vertCount);
 	private JButton addVert = new JButton("+");
 	private JButton subVert = new JButton("-");
-
+	private double dotSize = 3;
+	private JPanel dotSizePanel = new JPanel();
+	private TextField dotSizeTextField = new TextField(dotSize + "");
+	private JButton incSize = new JButton("+");
+	private JButton decSize = new JButton("-");
 	private JButton refreshButton = new JButton("Refresh");
 	private JButton clearButton = new JButton("Clear");
 	private ArrayList<Component> modComponentList = new ArrayList<Component>();
@@ -79,6 +84,7 @@ public class ImageEvolverFrame extends JFrame{
 	private JLabel fitnessLabel = new JLabel("0");
 	private CanvasPainter canvasPainter = new CanvasPainter();
 	private String originalFileName = null;
+
 	
 	//Entry point
 	public static void main(String[] args){
@@ -215,6 +221,31 @@ public class ImageEvolverFrame extends JFrame{
 		});
 		add(vertPanel);
 
+		dotSizePanel.setLayout(new GridLayout(1,4));
+		JLabel dotSizeLabel = new JLabel("Dot Size: ");
+		dotSizePanel.add(dotSizeLabel);
+		dotSizePanel.add(dotSizeTextField);
+		dotSizePanel.add(decSize);
+		decSize.addActionListener(new ActionListener(){
+			@Override
+			public void actionPerformed(ActionEvent ae){
+				if(dotSize > 0){
+					dotSize -= 1;	
+					dotSizeTextField.setText(dotSize + "");
+				}
+			}
+		});
+		dotSizePanel.add(incSize);
+		incSize.addActionListener(new ActionListener(){
+			@Override
+			public void actionPerformed(ActionEvent ae){
+				dotSize += 1;	
+				dotSizeTextField.setText(dotSize + "");
+			}
+		});
+	
+		add(dotSizePanel);
+		
 		JPanel buttonPanel = new JPanel();
 		buttonPanel.add(randomizeButton);
 		modComponentList.add(randomizeButton);
@@ -223,6 +254,28 @@ public class ImageEvolverFrame extends JFrame{
 			public void actionPerformed(ActionEvent ae){
 				randomizePolygons();
 				console.setText("Randomized.");
+			}
+		});
+		buttonPanel.add(stipplizeButton);
+		modComponentList.add(stipplizeButton);
+		stipplizeButton.addActionListener(new ActionListener(){
+			@Override
+			public void actionPerformed(ActionEvent ae){
+				if(image != null){
+					try{
+						dotSize = Double.parseDouble(dotSizeTextField.getText());
+						bestAttemptCanvas.setImage(StippledImageGenerator.generateStippledImage(
+								image, (int) (image.getWidth()/dotSize),(int)( image.getHeight()/dotSize), false));
+						bestAttemptCanvas.repaint();
+						console.setText("Stippled.");
+					}
+					catch(NumberFormatException e){
+						console.setText("Dot Size NaN");
+					}
+				}
+				else{
+					console.setText("There's no image!");
+				}
 			}
 		});
 		buttonPanel.add(exportDataButton);
@@ -362,7 +415,7 @@ public class ImageEvolverFrame extends JFrame{
 				userSetImageName = true;
 			}
 			lastImageFileName = fileDialog.getDirectory() + fileDialog.getFile();
-			BufferedImage imageToSave = evolver.getTestImage();
+			BufferedImage imageToSave = canvasPainter.generateImageFromCanvas(bestAttemptCanvas);
 			if(lastImageFileName.length() >= 4 && lastImageFileName.substring(lastImageFileName.length()-4).equals(".png")){
 				ImageIO.write(imageToSave, "PNG", new File(lastImageFileName));
 			}
