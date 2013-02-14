@@ -19,7 +19,6 @@ import java.util.Random;
 
 public class ImageEvolver extends Thread{
 	private boolean isRunning;
-	private boolean isFinished;
 	private BufferedImage orig, best, test;
 	private ImageEvolverFrame ui;
 	private List<ColoredPolygon> polygons = new ArrayList<ColoredPolygon>();
@@ -30,6 +29,9 @@ public class ImageEvolver extends Thread{
 	private double pixelSumOrig;
 	public int histogramRows, histogramCols, histogramColorPartitioningFactor;
 	PartitionedColorHistogram origColorHistogram = new PartitionedColorHistogram(4,4,4);
+	long startTime;
+	long lastPauseTime;
+	long timePassed;
 	public ImageEvolver(ImageEvolverFrame ui) {
 		start();
 		this.ui = ui;
@@ -85,7 +87,7 @@ public class ImageEvolver extends Thread{
 	@Override
 	public void run() {
 		while(true){
-			while(isRunning) {
+			while(isRunning) {			
 				Random random = new Random();
 				boolean createdPolygon = false;
 				//if less polygons than max, consider creating new polygon
@@ -101,19 +103,21 @@ public class ImageEvolver extends Thread{
 					else{
 						mutateVertice(polygons.get(random.nextInt(polygons.size())), random);
 					}
-					ui.updateMutationsLabel(++mutations);
 				}
-
+				ui.updateTestCanvas();
+				ui.updateMutationsLabel(++mutations);
+				ui.updateTimePassed(System.currentTimeMillis() - startTime);
 				//System.out.println("Best: " + lastEval + " | New: " + calculateSumOfPixelDifferences(orig,test));
 			}
-			try {
+			try{
 				sleep(2);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
+			}
+			catch(Exception e){
+				
 			}
 		}
 	}
-
+	
 	private void mutateVertice(ColoredPolygon testPolygon, Random random){
 		int verticeToChange = random.nextInt(vertCount); 
 		int oldX = testPolygon.xpoints[verticeToChange];
@@ -121,7 +125,6 @@ public class ImageEvolver extends Thread{
 		testPolygon.xpoints[verticeToChange] = random.nextInt(width);
 		testPolygon.ypoints[verticeToChange] = random.nextInt(height);
 		test = createImageFromPolygons(polygons);
-		ui.updateTestCanvas();
 		//System.out.println("ORIG: " + calculatePixelSum(orig));
 		//System.out.println("TEST: " + calculatePixelSum(test));
 		if(!goodMutation()){
@@ -134,29 +137,28 @@ public class ImageEvolver extends Thread{
 		Color oldColor = testPolygon.getColor();
 		Color newColor = null;
 		int parameterToChange = random.nextInt(5);
-		float value = random.nextInt(256);
+		float value = random.nextFloat();
 		switch(parameterToChange){
-		case 0: newColor = new Color(value,oldColor.getGreen(), oldColor.getBlue(), oldColor.getAlpha()); break;
-		case 1: newColor = new Color(oldColor.getRed(), value, oldColor.getBlue(), oldColor.getAlpha()); break;
-		case 2: newColor = new Color(oldColor.getRed(), oldColor.getGreen(), value, oldColor.getAlpha()); break;
-		case 3: newColor = new Color(oldColor.getRed(), oldColor.getGreen(),oldColor.getBlue(), value); break;
-		case 4: newColor = new Color(random.nextInt(256), random.nextInt(256), random.nextInt(256), random.nextInt(256)); break;
-		default:  newColor = new Color(random.nextInt(256), random.nextInt(256), random.nextInt(256), random.nextInt(256)); break;
+		case 0: newColor = new Color(value,(float)oldColor.getGreen()/255, (float)oldColor.getBlue()/255, (float)oldColor.getAlpha()/255); break;
+		case 1: newColor = new Color((float)oldColor.getRed()/255, value, (float)oldColor.getBlue()/255, (float)oldColor.getAlpha()/255); break;
+		case 2: newColor = new Color((float)oldColor.getRed()/255, (float)oldColor.getGreen()/255, value, (float)oldColor.getAlpha()/255); break;
+		case 3: newColor = new Color((float)oldColor.getRed()/255, (float)oldColor.getGreen()/255,(float)oldColor.getBlue()/255, value); break;
+		case 4: newColor = new Color(random.nextFloat(), random.nextFloat(), random.nextFloat(), random.nextFloat()); break;
+		default:  newColor = new Color(random.nextFloat(), random.nextFloat(), random.nextFloat(), random.nextFloat()); break;
 		}
 		testPolygon.setColor(newColor);
 		test = createImageFromPolygons(polygons);
-		ui.updateTestCanvas();
 		if(!goodMutation()){
 			testPolygon.setColor(oldColor);
 		}
 	}
+	
 	private boolean addPolygon(Random random){
 		//if no polygons, try making a polygon 
 		if(polygons.size() == 0){
 			ColoredPolygon testPolygon = createRandomPolygon(true);
 			polygons.add(testPolygon);
 			test = createImageFromPolygons(polygons);
-			ui.updateTestCanvas();
 			if(!goodMutation()){
 				polygons.remove(testPolygon);
 			}
@@ -169,7 +171,6 @@ public class ImageEvolver extends Thread{
 				ColoredPolygon testPolygon = createRandomPolygon(true);
 				polygons.add(testPolygon);
 				test = createImageFromPolygons(polygons);
-				ui.updateTestCanvas();
 				lastEval = evaluate();
 				if(!goodMutation()){
 					//polygons.remove(testPolygon);
@@ -179,7 +180,58 @@ public class ImageEvolver extends Thread{
 		}
 		return false;
 	}
-
+	
+	public void evolveShapes(){
+		Random random = new Random();
+		if(!polygons.isEmpty())
+			mutateColor(polygons.get(random.nextInt(polygons.size())), random);
+	}
+	
+	public void initRandomizedShapes(int x, int y){
+		Random r = new Random();
+		int sqW = Math.round(width/x);
+		int sqH = Math.round(height/y);
+		boolean xCount = true;
+		for(int yi = 0; yi < y; yi++){
+			for(int xi = 0; xi < x; xi++){
+				ColoredPolygon p = new ColoredPolygon();
+				System.out.println(xi);
+				if( yi%2 ==0){
+					if(xCount){
+						p.addPoint(xi * sqW, yi * sqH);
+						p.addPoint(xi * sqW + sqW, yi * sqH);
+						p.addPoint(xi * sqW + sqW/2, yi * sqH + sqH);
+						xCount = false;
+					}
+					else{			
+						p.addPoint((--xi) * sqW, yi * sqH);
+						p.addPoint((xi) * sqW + sqW/2, yi * sqH + sqH);
+						p.addPoint((xi) * sqW - sqW/2, yi * sqH + sqH);
+						xCount = true;
+					}
+					
+				}
+				else{
+					if(xCount){
+						p.addPoint((--xi) * sqW, yi * sqH);
+						p.addPoint((xi) * sqW + sqW/2, yi * sqH + sqH);
+						p.addPoint((xi) * sqW - sqW/2, yi * sqH + sqH);
+						xCount = false;
+					}
+					else{
+						p.addPoint(xi * sqW, yi * sqH);
+						p.addPoint(xi * sqW + sqW, yi * sqH);
+						p.addPoint(xi * sqW + sqW/2, yi * sqH + sqH);
+						xCount = true;
+					}
+				}
+				p.setColor(new Color(r.nextFloat(),r.nextFloat(),r.nextFloat(),r.nextFloat()));
+				
+				polygons.add(p);
+			}
+		}
+	}
+	
 	private ColoredPolygon createRandomPolygon(boolean initRandomColor) {
 		Random r = new Random();
 		ColoredPolygon p = null;
@@ -196,10 +248,17 @@ public class ImageEvolver extends Thread{
 	}
 
 	public void startRunning() {
+		if(startTime == 0){
+			startTime = System.currentTimeMillis();
+		}
+		if(lastPauseTime != 0){
+			startTime += (System.currentTimeMillis() - lastPauseTime);
+		}
 		isRunning = true;
 	}
 
 	public void stopRunning() {
+		lastPauseTime = System.currentTimeMillis();
 		isRunning = false;
 	}
 
@@ -274,7 +333,7 @@ public class ImageEvolver extends Thread{
 		final byte[] pixels = ((DataBufferByte) bim.getRaster().getDataBuffer()).getData();
 		final boolean hasAlphaChannel = bim.getAlphaRaster() != null;
 		ColorHistogram histogram = new ColorHistogram(histogramColorPartitioningFactor);
-		int a,r,g,b;
+		int r,g,b;
 		if (hasAlphaChannel) {
 			final int pixelLength = 4;
 			for (int pixel = 0; pixel < pixels.length; pixel += pixelLength) {
@@ -331,7 +390,7 @@ public class ImageEvolver extends Thread{
 				histogram.incrementPixelCount(row, col, r, g, b);
 			}
 		}
-		System.out.println(hasAlphaChannel);
+		//System.out.println(hasAlphaChannel);
 		return histogram;
 	}
 
@@ -409,7 +468,7 @@ public class ImageEvolver extends Thread{
 	public BufferedImage createRandomPolygons() {
 		test = createImageFromPolygons(initRandomizedPolygons());
 		lastEval = evaluate();
-		System.out.println(lastEval);
+		//System.out.println(lastEval);
 		return test;
 	}
 
@@ -463,7 +522,14 @@ public class ImageEvolver extends Thread{
 
 	public void clear() {
 		clearPolygons();
+		timePassed = 0;
+		lastPauseTime = 0;
+		startTime = 0;
 		mutations = 0;
 		improvements = 0;
+	}
+	
+	public List<ColoredPolygon> getPolygons(){
+		return new ArrayList<ColoredPolygon>(polygons);
 	}
 }

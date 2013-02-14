@@ -18,12 +18,15 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.text.DateFormat;
 import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 import javax.imageio.ImageIO;
 import javax.swing.BoxLayout;
@@ -32,14 +35,16 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
-public class ImageEvolverFrame extends JFrame {
+public class ImageEvolverFrame extends JFrame{
+	private static final long serialVersionUID = 2L;
 	//TODO: Fields need organization/refactoring
-	public int polyCount = 120;
+	public int polyCount = 150;
 	public int vertCount = 4;
 	private TextField loadFileTextField = new TextField("Path to Image");
-	private JButton loadFileButton = new JButton("Load Image");
+	//private JButton loadFileButton = new JButton("Load Image");
 	private JButton screenshotButton = new JButton("Capture");
 	private JButton screenshotButton2 = new JButton("Capture Comparison");
+	private JButton exportDataButton = new JButton("Export Data");
 	private Canvas originalImageCanvas = new Canvas();
 	private Canvas bestAttemptCanvas = new Canvas();
 	private Canvas testCanvas = new Canvas();
@@ -66,13 +71,14 @@ public class ImageEvolverFrame extends JFrame {
 	private ArrayList<Component> modComponentList = new ArrayList<Component>();
 	private JButton randomizeButton = new JButton("Randomize");
 	private JButton runButton = new JButton("Run");
-	private String lastFileName;
+	private String lastImageFileName;
 	private ImageEvolver evolver = new ImageEvolver(this);
 	private JLabel mutationsLabel = new JLabel("0");
 	private JLabel improvementsLabel = new JLabel("0");
+	private JLabel rateLabel = new JLabel("0");
 	private JLabel fitnessLabel = new JLabel("0");
 	private CanvasPainter canvasPainter = new CanvasPainter();
-	private String originalFileName = "";
+	private String originalFileName = null;
 	
 	//Entry point
 	public static void main(String[] args){
@@ -92,23 +98,23 @@ public class ImageEvolverFrame extends JFrame {
 		modComponentList.add(loadFileTextField);
 		loadFileTextField.addMouseListener(new MouseListener(){
 			@Override
-			public void mouseClicked(MouseEvent arg0) {
+			public void mouseClicked(MouseEvent arg0){
 				ImageEvolverFrame.this.loadImage();
 			}
 			@Override
-			public void mouseEntered(MouseEvent arg0) {}
+			public void mouseEntered(MouseEvent arg0){}
 			@Override
-			public void mouseExited(MouseEvent arg0) {}
+			public void mouseExited(MouseEvent arg0){}
 			@Override
-			public void mousePressed(MouseEvent arg0) {}
+			public void mousePressed(MouseEvent arg0){}
 			@Override
-			public void mouseReleased(MouseEvent arg0) {}
+			public void mouseReleased(MouseEvent arg0){}
 		});
 		/**
 		this.add(loadFileButton);
 		loadFileButton.addActionListener(new ActionListener(){
 			@Override
-			public void actionPerformed(ActionEvent ae) {
+			public void actionPerformed(ActionEvent ae){
 				loadImage(new File(loadFileTextField.getText()));
 			}
 		});
@@ -144,14 +150,20 @@ public class ImageEvolverFrame extends JFrame {
 
 		JPanel mutationsPanel = new JPanel();
 		mutationsPanel.add(new JLabel("Mutations: "));
-		mutationsLabel.setPreferredSize(new Dimension(100,30));
+		mutationsLabel.setPreferredSize(new Dimension(70,30));
 		mutationsPanel.add(mutationsLabel);
+		mutationsPanel.add(new JLabel("Rate: "));
+		mutationsPanel.add(rateLabel);
+		rateLabel.setPreferredSize(new Dimension(30,30));
+		JLabel mutpersecLabel = new JLabel("mutations/sec");
+		mutationsPanel.add(mutpersecLabel);
+		mutpersecLabel.setPreferredSize(new Dimension(100,30));
 		mutationsPanel.add(new JLabel("Improvements: "));
 		mutationsPanel.add(improvementsLabel);
-		improvementsLabel.setPreferredSize(new Dimension(100,30));
+		improvementsLabel.setPreferredSize(new Dimension(70,30));
 		mutationsPanel.add(new JLabel("Fitness: "));
 		mutationsPanel.add(fitnessLabel);
-		fitnessLabel.setPreferredSize(new Dimension(100,30));
+		fitnessLabel.setPreferredSize(new Dimension(70,30));
 		add(mutationsPanel);
 		
 		polyPanel.setLayout(new GridLayout(1,3));
@@ -161,7 +173,7 @@ public class ImageEvolverFrame extends JFrame {
 		//polyPanel.setPreferredSize(new Dimension(10, 5));
 		subPoly.addActionListener(new ActionListener(){
 			@Override
-			public void actionPerformed(ActionEvent ae) {
+			public void actionPerformed(ActionEvent ae){
 				if(polyCount > 1){
 					polyCount--;
 					polyLabel.setText("Polygons: " + polyCount);
@@ -172,7 +184,7 @@ public class ImageEvolverFrame extends JFrame {
 		modComponentList.add(addPoly);
 		addPoly.addActionListener(new ActionListener(){
 			@Override
-			public void actionPerformed(ActionEvent ae) {
+			public void actionPerformed(ActionEvent ae){
 				polyCount++;
 				polyLabel.setText("Polygons: " + polyCount);
 			}
@@ -185,7 +197,7 @@ public class ImageEvolverFrame extends JFrame {
 		modComponentList.add(subVert);
 		subVert.addActionListener(new ActionListener(){
 			@Override
-			public void actionPerformed(ActionEvent ae) {
+			public void actionPerformed(ActionEvent ae){
 				if(vertCount > 3){
 					vertCount--;
 					vertLabel.setText("Vertices: " + vertCount);
@@ -196,7 +208,7 @@ public class ImageEvolverFrame extends JFrame {
 		modComponentList.add(addVert);
 		addVert.addActionListener(new ActionListener(){
 			@Override
-			public void actionPerformed(ActionEvent ae) {
+			public void actionPerformed(ActionEvent ae){
 				vertCount++;
 				vertLabel.setText("Vertices: " + vertCount);
 			}
@@ -208,16 +220,28 @@ public class ImageEvolverFrame extends JFrame {
 		modComponentList.add(randomizeButton);
 		randomizeButton.addActionListener(new ActionListener(){
 			@Override
-			public void actionPerformed(ActionEvent ae) {
+			public void actionPerformed(ActionEvent ae){
 				randomizePolygons();
 				console.setText("Randomized.");
+			}
+		});
+		buttonPanel.add(exportDataButton);
+		exportDataButton.addActionListener(new ActionListener(){
+			@Override
+			public void actionPerformed(ActionEvent ae){
+				try {
+					exportPolygonData();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					console.setText("Data write error");
+				}
 			}
 		});
 		buttonPanel.add(screenshotButton);
 		//this.add(screenshotButton);
 		screenshotButton.addActionListener(new ActionListener(){
 			@Override
-			public void actionPerformed(ActionEvent ae) {
+			public void actionPerformed(ActionEvent ae){
 				capture();
 			}
 		});
@@ -225,7 +249,7 @@ public class ImageEvolverFrame extends JFrame {
 		//this.add(screenshotButton);
 		screenshotButton2.addActionListener(new ActionListener(){
 			@Override
-			public void actionPerformed(ActionEvent ae) {
+			public void actionPerformed(ActionEvent ae){
 				captureBothCanvases();
 			}
 		});
@@ -233,7 +257,7 @@ public class ImageEvolverFrame extends JFrame {
 		modComponentList.add(refreshButton);
 		refreshButton.addActionListener(new ActionListener(){
 			@Override
-			public void actionPerformed(ActionEvent ae) {
+			public void actionPerformed(ActionEvent ae){
 				updateEvolver();
 				paint(getGraphics());
 				console.setText("Refeshed.");
@@ -244,7 +268,7 @@ public class ImageEvolverFrame extends JFrame {
 		modComponentList.add(clearButton);
 		clearButton.addActionListener(new ActionListener(){
 			@Override
-			public void actionPerformed(ActionEvent ae) {
+			public void actionPerformed(ActionEvent ae){
 				if(evolver.isRunning()){
 					evolver.stopRunning();
 					evolver.clearPolygons();
@@ -258,6 +282,7 @@ public class ImageEvolverFrame extends JFrame {
 				testCanvas.clear();
 				mutationsLabel.setText("0");
 				improvementsLabel.setText("0");
+				rateLabel.setText("0");
 				fitness = 0;
 				fitnessLabel.setText(MessageFormat.format("{0,number,#.##%}", fitness));
 				console.setText("Cleared.");
@@ -267,7 +292,7 @@ public class ImageEvolverFrame extends JFrame {
 		buttonPanel.add(runButton);
 		runButton.addActionListener(new ActionListener(){
 			@Override
-			public void actionPerformed(ActionEvent ae) {
+			public void actionPerformed(ActionEvent ae){
 				//updateEvolver();
 				if(evolver.isRunning()){
 					evolver.stopRunning();
@@ -300,7 +325,7 @@ public class ImageEvolverFrame extends JFrame {
 		this.setSize(800,600);
 	}
 
-	protected void randomizePolygons() {
+	protected void randomizePolygons(){
 		evolver.clear();
 		evolver.setParameters(polyCount, vertCount, originalImageCanvas.getWidth(), originalImageCanvas.getHeight());
 		evolver.setTestImage(evolver.createRandomPolygons());
@@ -316,72 +341,71 @@ public class ImageEvolverFrame extends JFrame {
 	 * if user input own save path, then user's save path will be 
 	 * suggested for consequence, otherwise uses default format
 	*/
-	private boolean userSetName;
+	private boolean userSetImageName;
 	
 	//TODO: Maybe Refactor into a ImageSaver class
-	public void capture() {
+	public void capture(){
 		DateFormat dateFormat = new SimpleDateFormat("[yyyy-MM-dd] (HH-mm-ss)");
 		Date date = new Date();
 		String defaultFileName = "";
-		if(!userSetName){
-			lastFileName = defaultFileName = originalFileName + " " + dateFormat.format(date) +  
+		if(!userSetImageName){
+			lastImageFileName = defaultFileName = originalFileName + " " + dateFormat.format(date) +  
 					" (" + MessageFormat.format("{0,number,##.#%}",fitness) + "fit " + MessageFormat.format("{0,number,####}",mutations/1000) + "k_muts " + polyCount + "p " + vertCount + "v)";
 		}
 		fileDialog.setMode(FileDialog.SAVE);
-		fileDialog.setFile(lastFileName);
+		fileDialog.setFile(lastImageFileName);
 		fileDialog.setVisible(true);
-		try {
+		try{
 			if(fileDialog.getFile() == null)
 				return;
 			if(!fileDialog.getFile().equals(defaultFileName)){
-				System.out.println("e");
-				userSetName = true;
+				userSetImageName = true;
 			}
-			lastFileName = fileDialog.getDirectory() + fileDialog.getFile();
+			lastImageFileName = fileDialog.getDirectory() + fileDialog.getFile();
 			BufferedImage imageToSave = evolver.getTestImage();
-			if(lastFileName.length() >= 4 && lastFileName.substring(lastFileName.length()-4).equals(".png")){
-				ImageIO.write(imageToSave, "PNG", new File(lastFileName));
+			if(lastImageFileName.length() >= 4 && lastImageFileName.substring(lastImageFileName.length()-4).equals(".png")){
+				ImageIO.write(imageToSave, "PNG", new File(lastImageFileName));
 			}
 			else{
 				//appends ".png" to file name so file is saved as PNG instead of File
-				ImageIO.write(imageToSave, "PNG", new File(lastFileName + ".png"));
+				ImageIO.write(imageToSave, "PNG", new File(lastImageFileName + ".png"));
 			}
-			console.setText("Capture saved to: " + lastFileName);
-		} catch (IOException e) {
+			console.setText("Capture saved to: " + lastImageFileName);
+		} catch (IOException e){
 			console.setText("Error saving.");
 		}
 	}
 	
-	public void captureBothCanvases() {
+	public void captureBothCanvases(){
 		DateFormat dateFormat = new SimpleDateFormat("[yyyy-MM-dd] (HH-mm-ss)");
 		Date date = new Date();
 		String defaultFileName = "";
-		if(!userSetName){
-			lastFileName = defaultFileName = originalFileName + " " + dateFormat.format(date) +  
+		if(!userSetImageName){
+			lastImageFileName = defaultFileName = originalFileName + " " + dateFormat.format(date) +  
 					" (" + MessageFormat.format("{0,number,##.#%}",fitness) + "fit " + MessageFormat.format("{0,number,####}",mutations/1000) + "k_muts " + polyCount + "p " + vertCount + "v)";
 		}
 		fileDialog.setMode(FileDialog.SAVE);
-		fileDialog.setFile(lastFileName);
+		fileDialog.setFile(lastImageFileName);
 		fileDialog.setVisible(true);
-		try {
+		try{
 			if(fileDialog.getFile() == null)
 				return;
 			if(!fileDialog.getFile().equals(defaultFileName)){
 				System.out.println("e");
-				userSetName = true;
+				userSetImageName = true;
 			}
-			lastFileName = fileDialog.getDirectory() + fileDialog.getFile();
+			lastImageFileName = fileDialog.getDirectory() + fileDialog.getFile();
 			BufferedImage imageToSave = canvasPainter.generateComparisonImage(originalImageCanvas,bestAttemptCanvas);
 
-			if(lastFileName.length() >= 4 && lastFileName.substring(lastFileName.length()-4).equals(".png")){
-				ImageIO.write(imageToSave, "PNG", new File(lastFileName));
+			if(lastImageFileName.length() >= 4 && lastImageFileName.substring(lastImageFileName.length()-4).equals(".png")){
+				ImageIO.write(imageToSave, "PNG", new File(lastImageFileName));
 			}
 			else{
 				//appends ".png" to file name so file is saved as PNG instead of File
-				ImageIO.write(imageToSave, "PNG", new File(lastFileName + ".png"));
+				ImageIO.write(imageToSave, "PNG", new File(lastImageFileName + ".png"));
 			}
-			console.setText("Capture saved to: " + lastFileName);
-		} catch (IOException e) {
+			console.setText("Capture saved to: " + lastImageFileName);
+		} catch (IOException e){
 			console.setText("Error saving.");
 		}
 	}
@@ -392,7 +416,7 @@ public class ImageEvolverFrame extends JFrame {
 		if(fileDialog.getFile() != null){
 			loadFileTextField.setText(fileDialog.getDirectory() + fileDialog.getFile());
 		}
-		try {
+		try{
 			image = ImageIO.read(new File(fileDialog.getDirectory() + fileDialog.getFile()));//Program.class.getResource("test.png"));//loadFileTextField.getText()));
 			if(image != null){
 				originalImageCanvas.setImage(image);
@@ -410,26 +434,26 @@ public class ImageEvolverFrame extends JFrame {
 				console.setText("Invalid File Type.");
 			}
 			this.paintComponents(this.getGraphics());
-		} catch (IOException e) {
+		} catch (IOException e){
 			console.setText("File not found.");
 		}
 		updateEvolver();
 	}	
 
 	//TODO: could use work.
-	public void updateCanvases() {
+	public void updateCanvases(){
 		bestAttemptCanvas.setImage(evolver.getBestImage());
 		bestAttemptCanvas.repaint();
 		testCanvas.setImage(evolver.getTestImage());
 		testCanvas.repaint();
 	}
 
-	public void updateTestCanvas() {
+	public void updateTestCanvas(){
 		testCanvas.setImage(evolver.getTestImage());
 		testCanvas.repaint();
 	}
 
-	public void updateBestCanvas() {
+	public void updateBestCanvas(){
 		bestAttemptCanvas.setImage(evolver.getBestImage());
 		bestAttemptCanvas.repaint();
 	}
@@ -466,5 +490,58 @@ public class ImageEvolverFrame extends JFrame {
 		improvementsLabel.setText(""+ improvements);
 		this.fitness = fitness;
 		fitnessLabel.setText(MessageFormat.format("{0,number,#.##%}", fitness));
+	}
+	
+	private boolean userSetDataName = false;
+	private String lastDataFileName = null;
+	public void exportPolygonData() throws IOException{
+		fileDialog.setMode(FileDialog.SAVE);
+		String defaultFileName = null;
+		if(originalFileName == null){
+			defaultFileName = "untitled.txt";
+		}
+		else{
+			defaultFileName = originalFileName.substring(0,originalFileName.length() - 4) + ".txt";
+		}
+		if(!userSetDataName){
+			fileDialog.setFile(defaultFileName);
+		}
+		else{
+			fileDialog.setFile(lastDataFileName);
+		}
+		fileDialog.setVisible(true);
+		try{
+			if(fileDialog.getFile() == null)
+				return;
+			String saveLocation= "";
+			saveLocation = fileDialog.getDirectory() + fileDialog.getFile();
+			if(!fileDialog.getFile().equals(defaultFileName)){
+				lastDataFileName = saveLocation;
+				saveLocation += ".txt";
+				userSetDataName = true;
+			}
+
+			FileOutputStream fis = null;
+			fis = new FileOutputStream(saveLocation); 
+			OutputStreamWriter out = new OutputStreamWriter(fis, "UTF-8");
+			List<ColoredPolygon> polygons = evolver.getPolygons();
+			if(polygons.size() != 0){
+				out.write(polygons.size() + " " + polygons.get(0).npoints+ System.getProperty("line.separator"));
+				for(ColoredPolygon p: polygons){
+					System.out.println(p.toString());
+					out.write(p.toString() + System.getProperty("line.separator"));
+				}
+			}
+			out.close();
+			console.setText("Data saved to: " + saveLocation);
+		} catch (IOException e){
+			console.setText("Error saving.");
+			e.printStackTrace();
+		}
+	}
+
+	public void updateTimePassed(long timePassed) {
+		rateLabel.setText(mutations*1000/timePassed + "");
+		
 	}
 }

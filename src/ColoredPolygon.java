@@ -8,6 +8,8 @@ import java.awt.Color;
 import java.awt.Polygon;
 
 public class ColoredPolygon extends Polygon {
+
+	private static final long serialVersionUID = 1L;
 	private Color color;
 	
 	public ColoredPolygon(){
@@ -34,5 +36,18 @@ public class ColoredPolygon extends Polygon {
 	
 	public ColoredPolygon getCopy(){
 		return new ColoredPolygon(xpoints, ypoints, npoints, color);
+	}
+	
+	@Override
+	public String toString(){
+		String s = "";
+		for(int n = 0; n < npoints; n++){
+			s += xpoints[n] + " " + ypoints[n] + " ";
+		}
+		s += color.getRed() + " ";
+		s += color.getGreen() + " ";
+		s += color.getBlue() + " ";
+		s += color.getAlpha() + "";
+		return s;
 	}
 }

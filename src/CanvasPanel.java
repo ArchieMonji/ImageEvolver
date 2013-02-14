@@ -8,16 +8,7 @@
 
 import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.FileDialog;
-import java.awt.Graphics;
-import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 
-import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.JLabel;
@@ -25,6 +16,8 @@ import javax.swing.JPanel;
 import javax.swing.border.Border;
 
 public class CanvasPanel extends JPanel {
+	private static final long serialVersionUID = 1L;
+	
 	private Canvas canvas;
 	JPanel borderPanel;
 	public CanvasPanel(String title, Canvas ic){

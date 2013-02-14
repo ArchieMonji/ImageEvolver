@@ -10,6 +10,8 @@ import java.awt.image.BufferedImage;
 import javax.swing.JPanel;
 
 public class CanvasPainter extends JPanel{
+	private static final long serialVersionUID = 1L;
+
 	public BufferedImage generateComparisonImage(Canvas canvas1, Canvas canvas2){
 		BufferedImage imageToSave = new BufferedImage(canvas1.getWidth() * 2, canvas1.getHeight(), BufferedImage.TYPE_4BYTE_ABGR); 
 		Graphics g = imageToSave.getGraphics();

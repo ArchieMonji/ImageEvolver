@@ -163,7 +163,6 @@ public class EvaluationTest{
 	
 	static void reset(){
 		System.out.println(getMethodName());
-		int count = 0;
 		diff = 0;
 		percent = 0;
 		a.clear();
@@ -191,23 +190,23 @@ public class EvaluationTest{
 		System.out.println("Eval: " + method);
 		Method m = EvaluationTest.class.getDeclaredMethod(method);
 		initMaxMin();
-		m.invoke(null, null);
+		m.invoke(null,(Object[]) null);
 		initMinMax();
-		m.invoke(null, null);
+		m.invoke(null,(Object[]) null);
 		initMidValues();
-		m.invoke(null, null);
+		m.invoke(null,(Object[]) null);
 		initMidValues2();
-		m.invoke(null, null);
+		m.invoke(null,(Object[]) null);
 		initSymmetricMax();
-		m.invoke(null, null);
+		m.invoke(null,(Object[]) null);
 		initSymmetricMid();
-		m.invoke(null, null);
+		m.invoke(null,(Object[]) null);
 		initEqualMax();
-		m.invoke(null, null);
+		m.invoke(null,(Object[]) null);
 		initEqualMid();
-		m.invoke(null, null);
+		m.invoke(null,(Object[]) null);
 		initZero();
-		m.invoke(null, null);
+		m.invoke(null,(Object[]) null);
 		System.out.println("//////////////////////////////////////////////");
 	}
 	

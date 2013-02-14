@@ -7,6 +7,7 @@
  */
 
 public class ColorHistogram {
+	
 	private int[][][] rgb; 
 	private int numBins;
 	private int count;

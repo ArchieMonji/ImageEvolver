@@ -13,6 +13,8 @@ import java.awt.image.BufferedImage;
 import javax.swing.JPanel;
 
 public class Canvas extends JPanel {
+	private static final long serialVersionUID = 1L;
+	
 	private BufferedImage image;
 	//public ArrayList<ColoredPolygon> polygons = new ArrayList<ColoredPolygon>();
 	public Canvas(){
