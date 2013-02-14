@@ -38,7 +38,7 @@ import javax.swing.JPanel;
 public class ImageEvolverFrame extends JFrame{
 	private static final long serialVersionUID = 2L;
 	//TODO: Fields need organization/refactoring
-	public int polyCount = 150;
+	public int polyCount = 300;
 	public int vertCount = 4;
 	private TextField loadFileTextField = new TextField("Path to Image");
 	//private JButton loadFileButton = new JButton("Load Image");
@@ -229,7 +229,7 @@ public class ImageEvolverFrame extends JFrame{
 		decSize.addActionListener(new ActionListener(){
 			@Override
 			public void actionPerformed(ActionEvent ae){
-				if(dotSize > 0){
+				if(dotSize > 1){
 					dotSize -= 1;	
 					dotSizeTextField.setText(dotSize + "");
 				}
@@ -264,13 +264,17 @@ public class ImageEvolverFrame extends JFrame{
 				if(image != null){
 					try{
 						dotSize = Double.parseDouble(dotSizeTextField.getText());
+						if(dotSize < .1){
+							console.setText("Enter a size > .1.");
+							return;
+						}
 						bestAttemptCanvas.setImage(StippledImageGenerator.generateStippledImage(
 								image, (int) (image.getWidth()/dotSize),(int)( image.getHeight()/dotSize), false));
 						bestAttemptCanvas.repaint();
 						console.setText("Stippled.");
 					}
 					catch(NumberFormatException e){
-						console.setText("Dot Size NaN");
+						console.setText("Dot Size NaN.");
 					}
 				}
 				else{
