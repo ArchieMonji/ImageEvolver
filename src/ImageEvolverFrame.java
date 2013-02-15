@@ -66,7 +66,7 @@ public class ImageEvolverFrame extends JFrame{
 	private JLabel vertLabel = new JLabel("Vertices: " + vertCount);
 	private JButton addVert = new JButton("+");
 	private JButton subVert = new JButton("-");
-	private double dotSize = 3;
+	private float dotSize = 3;
 	private JPanel dotSizePanel = new JPanel();
 	private TextField dotSizeTextField = new TextField(dotSize + "");
 	private JButton incSize = new JButton("+");
@@ -263,13 +263,13 @@ public class ImageEvolverFrame extends JFrame{
 			public void actionPerformed(ActionEvent ae){
 				if(image != null){
 					try{
-						dotSize = Double.parseDouble(dotSizeTextField.getText());
+						dotSize = Float.parseFloat(dotSizeTextField.getText());
 						if(dotSize < .1){
 							console.setText("Enter a size > .1.");
 							return;
 						}
 						bestAttemptCanvas.setImage(StippledImageGenerator.generateStippledImage(
-								image, (int) (image.getWidth()/dotSize),(int)( image.getHeight()/dotSize), false));
+								image, dotSize, false));
 						bestAttemptCanvas.repaint();
 						console.setText("Stippled.");
 					}

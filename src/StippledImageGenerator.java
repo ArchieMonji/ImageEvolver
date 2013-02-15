@@ -9,22 +9,21 @@ import javax.swing.JPanel;
 public class StippledImageGenerator extends JPanel{
 	private static final long serialVersionUID = 1L;
 
-	public static BufferedImage generateStippledImage(BufferedImage image, int rows, int cols, boolean includeAlpha){
+	public static BufferedImage generateStippledImage(BufferedImage image, float dotSize, boolean includeAlpha){
 		final byte[] p1 = ((DataBufferByte) image.getRaster().getDataBuffer()).getData();
 		final boolean hasAlphaChannel = image.getAlphaRaster() != null;
 		if(!hasAlphaChannel){
 			includeAlpha = false;
 		}
 		int pixelLength = hasAlphaChannel? 4 : 3;
-		ColoredDot[][] dots = new ColoredDot[rows][cols];
 		float w = image.getWidth();
 		float h = image.getHeight();
-		float dotW = w/cols;
-		float dotH = h/rows;
-		float dotR = h/cols;
+		int rows = (int) Math.ceil(h/dotSize);
+		int cols = (int) Math.ceil(w/dotSize);
+		ColoredDot[][] dots = new ColoredDot[rows][cols];
 		for(int r = 0; r < rows; r++){
 			for(int c = 0; c < cols; c++){
-				dots[r][c] = new ColoredDot(c * dotW, r * dotH, dotR, dotR);
+				dots[r][c] = new ColoredDot(c * dotSize, r * dotSize, dotSize, dotSize);
 			}
 		}
 		float x = 0, y = 0;
@@ -36,8 +35,8 @@ public class StippledImageGenerator extends JPanel{
 			p = pixel / pixelLength;
 			x = p % w;
 			y = p / w;
-			row = (int)(p / w / dotH);
-			col = (int)((p % w) / dotW);
+			row = (int)(p / w / dotSize);
+			col = (int)((p % w) / dotSize);
 			if(dots[row][col].intersects(x, y, 1, 1)){
 				if(includeAlpha){
 					a = (p1[pixel + - 1] & 0xff); //alpha
