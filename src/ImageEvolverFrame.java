@@ -38,8 +38,8 @@ import javax.swing.JPanel;
 public class ImageEvolverFrame extends JFrame{
 	private static final long serialVersionUID = 2L;
 	//TODO: Fields need organization/refactoring
-	public int polyCount = 300;
-	public int vertCount = 4;
+	public int polyCount = 75;
+	public int vertCount = 6;
 	private TextField loadFileTextField = new TextField("Path to Image");
 	//private JButton loadFileButton = new JButton("Load Image");
 	private JButton screenshotButton = new JButton("Capture");

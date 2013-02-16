@@ -122,8 +122,8 @@ public class ImageEvolver extends Thread{
 		int verticeToChange = random.nextInt(vertCount); 
 		int oldX = testPolygon.xpoints[verticeToChange];
 		int oldY = testPolygon.ypoints[verticeToChange];
-		testPolygon.xpoints[verticeToChange] = random.nextInt(width);
-		testPolygon.ypoints[verticeToChange] = random.nextInt(height);
+		testPolygon.xpoints[verticeToChange] = random.nextInt(width + 1);
+		testPolygon.ypoints[verticeToChange] = random.nextInt(height + 1);
 		test = createImageFromPolygons(polygons);
 		//System.out.println("ORIG: " + calculatePixelSum(orig));
 		//System.out.println("TEST: " + calculatePixelSum(test));
@@ -411,7 +411,7 @@ public class ImageEvolver extends Thread{
 		for (int pix1 = img1hasAlphaChannel? 1 : 0, pix2 = img2hasAlphaChannel? 1 : 0; pix1 < p1.length; pix1 += img1PixelLength, pix2 += img2PixelLength) {
 			//Build AlphaHistogram, or ignore alpha
 			if(includeAlpha){
-				sum += (p1[pix1 - 1]  & 0xff) - (p1[pix1 - 1]  & 0xff); //alpha
+				sum +=  Math.abs((p1[pix1 - 1]  & 0xff) - (p2[pix2 - 1]  & 0xff)); //alpha
 			}
 			sum += Math.abs((p1[pix1 + 0]  & 0xff) 	- (p2[pix2 + 0]  & 0xff)); // blue
 			sum += Math.abs((p1[pix1 + 1]  & 0xff) 	- (p2[pix2 + 1]  & 0xff)); // green
