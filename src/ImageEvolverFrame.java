@@ -31,6 +31,7 @@ import java.util.List;
 import javax.imageio.ImageIO;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -38,8 +39,9 @@ import javax.swing.JPanel;
 public class ImageEvolverFrame extends JFrame{
 	private static final long serialVersionUID = 2L;
 	//TODO: Fields need organization/refactoring
-	public int polyCount = 75;
+	public int polyCount = 150;
 	public int vertCount = 6;
+	private JCheckBox autoSaveBox = new JCheckBox(); 
 	private TextField loadFileTextField = new TextField("Path to Image");
 	//private JButton loadFileButton = new JButton("Load Image");
 	private JButton screenshotButton = new JButton("Capture");
@@ -155,6 +157,8 @@ public class ImageEvolverFrame extends JFrame{
 		//------------------------------------------------------
 
 		JPanel mutationsPanel = new JPanel();
+		mutationsPanel.add(new JLabel("Auto Save:"));
+		mutationsPanel.add(autoSaveBox);
 		mutationsPanel.add(new JLabel("Mutations: "));
 		mutationsLabel.setPreferredSize(new Dimension(70,30));
 		mutationsPanel.add(mutationsLabel);
@@ -419,6 +423,7 @@ public class ImageEvolverFrame extends JFrame{
 				userSetImageName = true;
 			}
 			lastImageFileName = fileDialog.getDirectory() + fileDialog.getFile();
+			lastDirectory = fileDialog.getDirectory();
 			BufferedImage imageToSave = canvasPainter.generateImageFromCanvas(bestAttemptCanvas);
 			if(lastImageFileName.length() >= 4 && lastImageFileName.substring(lastImageFileName.length()-4).equals(".png")){
 				ImageIO.write(imageToSave, "PNG", new File(lastImageFileName));
@@ -452,6 +457,7 @@ public class ImageEvolverFrame extends JFrame{
 				userSetImageName = true;
 			}
 			lastImageFileName = fileDialog.getDirectory() + fileDialog.getFile();
+			lastDirectory = fileDialog.getDirectory();
 			BufferedImage imageToSave = canvasPainter.generateComparisonImage(originalImageCanvas,bestAttemptCanvas);
 
 			if(lastImageFileName.length() >= 4 && lastImageFileName.substring(lastImageFileName.length()-4).equals(".png")){
@@ -467,11 +473,13 @@ public class ImageEvolverFrame extends JFrame{
 		}
 	}
 
+	String lastDirectory;
 	public void loadImage(){
 		fileDialog.setMode(FileDialog.LOAD);
 		fileDialog.setVisible(true);
 		if(fileDialog.getFile() != null){
 			loadFileTextField.setText(fileDialog.getDirectory() + fileDialog.getFile());
+			lastDirectory = fileDialog.getDirectory();
 		}
 		try{
 			image = ImageIO.read(new File(fileDialog.getDirectory() + fileDialog.getFile()));//Program.class.getResource("test.png"));//loadFileTextField.getText()));
@@ -536,9 +544,32 @@ public class ImageEvolverFrame extends JFrame{
 		}
 	}
 	int mutations;
+	private int autoSaveSpacing = 20000;
 	public void updateMutationsLabel(int mutations){
 		this.mutations = mutations;
 		mutationsLabel.setText(""+ mutations);
+		
+		if(autoSaveBox.isSelected() && mutations % autoSaveSpacing  == 0){
+			try{
+				DateFormat dateFormat = new SimpleDateFormat("[yyyy-MM-dd] (HH-mm-ss)");
+				Date date = new Date();
+				lastImageFileName = lastDirectory+originalFileName + " " + dateFormat.format(date) +  
+						" (" + MessageFormat.format("{0,number,##.#%}",fitness) + "fit " + MessageFormat.format("{0,number,####}",mutations/1000) + "k_muts " + polyCount + "p " + vertCount + "v)";
+			
+				BufferedImage imageToSave = canvasPainter.generateComparisonImage(originalImageCanvas,bestAttemptCanvas);
+
+				if(lastImageFileName.length() >= 4 && lastImageFileName.substring(lastImageFileName.length()-4).equals(".png")){
+					ImageIO.write(imageToSave, "PNG", new File(lastImageFileName));
+				}
+				else{
+					//appends ".png" to file name so file is saved as PNG instead of File
+					ImageIO.write(imageToSave, "PNG", new File(lastImageFileName + ".png"));
+				}
+				console.setText("Capture saved to: " + lastImageFileName);
+			} catch (IOException e){
+				console.setText("Error saving.");
+			}
+		}
 	}
 	
 	private double fitness;
